@@ -1,5 +1,5 @@
 .data
-.include "TitleScreen.data"  # Inclui os dados da sprite
+.include "samusteste.data"  # Inclui os dados da sprite
 
 .text
 # Defino o frame 0 como o frame a ser utilizado
@@ -9,7 +9,7 @@
 
 	li s0, 0xFF100000	# defino o primeiro endereço da tela
 # Imprimo a imagem
-	la, t0, TitleScreen	# Coloco o endereço da imagem em t0
+	la, t0, samusteste	# Coloco o endereço da imagem em t0
 	lw t1, 0(t0)		# Lê o número de linhas
 	lw t2, 4(t0)		# Lê o número de colunas
 	li t3, 0		# Contador
