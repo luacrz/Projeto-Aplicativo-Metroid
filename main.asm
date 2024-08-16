@@ -5,7 +5,6 @@
 .include "Samustransparente1.s"
 
 CHAR_POS: .half 0,0
-OLD_CHAR_POS: .half 0,0
 
 .text
 SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -39,9 +38,16 @@ SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
 	#	FRAME 1 = 0xFF10 0000
 
 LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
-		call KEY2
-		xori s0,s0,1 # alterna entre os frames
+		call KEY2 # chama função para verificar se algum botão foi apertado
 		
+		xori s0,s0,1 # alterna entre os frames 
+		
+		### APAGAR A SAMUS ANTIGA ANTES DE MOVER
+		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
+		li a1,0 # LARGURA DA IMAGEM
+		li a2,0 # ALTURA DA IMAGEM
+		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+		call PRINT
 		
 		### DESENHA A SAMUS
 		la t0,CHAR_POS #colocar o pesonagem na tela
@@ -49,21 +55,12 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 		la a0,Samus1 # recebe a imagem da samus base
 		lh a1,0(t0) # posição horizontal
 		lh a2,2(t0) # posição vertical
-		mv a3,s0 # alterna o frame em que trabalhamos
+		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
 		call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
 		
+		### AQUI O FRAME É ALTERADO
 		li t0,0xFF200604 # valor para alternar os frames
 		sw s0,0(t0) # colocar o valor para alternar o frame em s0 que é a variavel dos frames
-		
-		### APAGAR A SAMUS ANTIGA ANTES DE MOVER
-		la t0,OLD_CHAR_POS #colocar a antiga pesonagem na tela
-		
-		la a0,Samustransparente1 # recebe a imagem da samustransparente
-		lh a1,0(t0) # posição horizontal
-		lh a2,2(t0) # posição vertical
-		mv a3,s0 # alterna o frame em que trabalhamos
-		xori a3,a3,1 # para escrever no frame inverso e não bagunçar todo o esquema
-		call PRINT
 		
 		j LOOP_JOGO # Loop infinito para manter a execução
 		
@@ -90,10 +87,6 @@ FIM:		ret				# retorna
 
 CHAR_ESQ: #### MOVIMENTA A SAMUS PARA A ESQUERDA
 		la t0,CHAR_POS # carrega posiçao da samus em t0
-		la t1,OLD_CHAR_POS # carrega a antiga posição da samus
-		lw t2,0(t0) # armazena a word inteira, x e y da posição atual
-		sw t2,0(t1) # e coloca na antiga
-		
 		lh t1,0(t0) # carrega o x da posição para alterar
 		addi t1,t1,-20 # diminiu o valor do x, para ir para a esquerda
 		sh t1,0(t0) # coloca o valor de volta no char_pos
@@ -102,10 +95,6 @@ CHAR_ESQ: #### MOVIMENTA A SAMUS PARA A ESQUERDA
 		
 CHAR_DIR: #### MOVIMENTA A SAMUS PARA A direita
 		la t0,CHAR_POS # carrega posiçao da samus em t0
-		la t1,OLD_CHAR_POS # carrega a antiga posição da samus
-		lw t2,0(t0) # armazena a word inteira, x e y da posição atual
-		sw t2,0(t1) # e coloca na antiga
-		
 		lh t1,0(t0) # carrega o x da posição para alterar
 		addi t1,t1,20 # aumenta o valor do x, para ir para a direita
 		sh t1,0(t0) # coloca o valor de volta no char_pos
@@ -113,11 +102,7 @@ CHAR_DIR: #### MOVIMENTA A SAMUS PARA A direita
 		ret
 		
 CHAR_CIMA: #### MOVIMENTA A SAMUS PARA cima
-		la t0,CHAR_POS # carrega posiçao da samus em t0
-		la t1,OLD_CHAR_POS # carrega a antiga posição da samus
-		lw t2,0(t0) # armazena a word inteira, x e y da posição atual
-		sw t2,0(t1) # e coloca na antiga
-		
+		la t0,CHAR_POS # carrega posiçao da samus em t0		
 		lh t1,2(t0) # carrega o y da posição para alterar
 		addi t1,t1,-32 # aumenta o valor do y, para ir para a cima
 		sh t1,2(t0) # coloca o valor de volta no char_pos
@@ -126,10 +111,6 @@ CHAR_CIMA: #### MOVIMENTA A SAMUS PARA cima
 		
 CHAR_BAIXO: #### MOVIMENTA A SAMUS PARA baixo
 		la t0,CHAR_POS # carrega posiçao da samus em t0
-		la t1,OLD_CHAR_POS # carrega a antiga posição da samus
-		lw t2,0(t0) # armazena a word inteira, x e y da posição atual
-		sw t2,0(t1) # e coloca na antiga
-		
 		lh t1,2(t0) # carrega o y da posição para alterar
 		addi t1,t1,32 # aumenta o valor do y, para ir para a cima
 		sh t1,2(t0) # coloca o valor de volta no char_pos
@@ -174,9 +155,3 @@ PRINT_LINHA: # PARA COMEÇAR A DESENHAR NO BITMAP DISPLAY
 		bgt t5,t2,PRINT_LINHA # ENQUANTO A ALTURA INTEIRA DA IMAGEM NÃO FOR IMPRESSA, NÃO PARA
 		
 		ret
-		
-		
-		
-		
-		
-		
