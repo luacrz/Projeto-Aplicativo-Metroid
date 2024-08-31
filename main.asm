@@ -1,13 +1,26 @@
 .data
 .include "TitleScreen.s" # Inclui os dados da sprite
 .include "cenario1.s"
-.include "Samus1.s"
+.include "Samusr0.s"
+.include "Samusl0.s"
+.include "Samusr1.s"
+.include "Samusl1.s"
+.include "Samusr2.s"
+.include "Samusl2.s"
+.include "Samusr3.s"
+.include "Samusl3.s"
+.include "Samusrjump.s"
+.include "Samusljump.s"
+
+.include "Samusr01.s"
 .include "Samustransparente1.s"
 
 MAP_POS: .word 480,0
 CHAR_POS: .word 630,161
-LAST_DIREC: .string "d"
-JUMP: .half 0
+LAST_DIREC: .word 'd'
+FRAME_SAMUS: .half 0
+GRAVIDADE: .half 0
+DELAY: .half 0
 
 .text
 SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -45,18 +58,100 @@ LOOP_MENU:
 		j LOOP_JOGO
 
 LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
+		la a0,DELAY
+		lh a1,0(a0)
+		addi a1,a1,1
+		sh a1,0(a0)
+		addi a2,zero,30
+		bne a1,a2,SKIP_JUMP
+		
+		sh zero,0(a0)
+		call GRAVID_DOWN
+		call JUMP
+SKIP_JUMP:
 		call KEY2 # chama função para verificar se algum botão foi apertado
 		
 		xori s0,s0,1 # alterna entre os frames 
 		
-		### APAGAR A SAMUS ANTIGA ANTES DE MOVER
 		la a0,cenario1 #INICIA O REGISTRADOR COM A IMAGEM DO cenario
 		li a1,0 # LARGURA DA IMAGEM
 		li a2,0 # ALTURA DA IMAGEM
 		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
 		call PRINT_MAPA
 		
-		### DESENHA A SAMUS
+		### DECIDE QUE LADO QUE A SAMUS IRA OLHAR BASEADO NA DIREÇÃO QUE ELA ESTA INDO
+		la a0, LAST_DIREC  # Carrega o endereço da string LAST_DIREC no registrador a0
+		lw a1, 0(a0)       # Carrega o primeiro byte da string (o caractere 'd') em a1
+	  	
+		li a0,'a' # coloca o valor da tecla
+		beq a1,a0,CHAR_LADO_ESQ # verifica se o usuario pressionou o 'a'
+		
+		li a0,'d' # coloca o valor da tecla
+		beq a1,a0,CHAR_LADO_DIR # verifica se o usuario pressionou o 'd'
+		
+CHAR_LADO_ESQ:	
+		### CONTINUAR DAQUI
+		la a0, FRAME_SAMUS  # Carrega o endereço da string LAST_DIREC no registrador a0
+		lh a1, 0(a0)
+		add a2,zero,zero
+		beq a1,a2,CHAR_0_ESQ
+		addi a2,zero,1
+		beq a1,a2,CHAR_1_ESQ
+		addi a2,zero,2
+		beq a1,a2,CHAR_2_ESQ
+		addi a2,zero,3
+		beq a1,a2,CHAR_3_ESQ
+		addi a2,zero,4
+		beq a1,a2,CHAR_JUMP_ESQ
+CHAR_0_ESQ:
+		la a0,Samusl0 # recebe a imagem da samus base esquerda
+		j PRINT_SAMUS # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CHAR_1_ESQ:
+		la a0,Samusl1 # recebe a imagem da samus base esquerda
+		j PRINT_SAMUS # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CHAR_2_ESQ:
+		la a0,Samusl2 # recebe a imagem da samus base esquerda
+		j PRINT_SAMUS # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CHAR_3_ESQ:
+		la a0,Samusl3 # recebe a imagem da samus base esquerda
+		j PRINT_SAMUS # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CHAR_JUMP_ESQ:
+		la a0,Samusljump # recebe a imagem da samus base esquerda
+		j PRINT_SAMUS # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+		
+CHAR_LADO_DIR:	
+
+### CONTINUAR DAQUI
+		la a0, FRAME_SAMUS  # Carrega o endereço da string LAST_DIREC no registrador a0
+		lh a1, 0(a0)
+		add a2,zero,zero
+		beq a1,a2,CHAR_0_DIR
+		addi a2,zero,1
+		beq a1,a2,CHAR_1_DIR
+		addi a2,zero,2
+		beq a1,a2,CHAR_2_DIR
+		addi a2,zero,3
+		beq a1,a2,CHAR_3_DIR
+		addi a2,zero,4
+		beq a1,a2,CHAR_JUMP_DIR
+CHAR_0_DIR:
+		la a0,Samusr0 # recebe a imagem da samus base esquerda
+		j PRINT_SAMUS # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CHAR_1_DIR:
+		la a0,Samusr1 # recebe a imagem da samus base esquerda
+		j PRINT_SAMUS # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CHAR_2_DIR:
+		la a0,Samusr2 # recebe a imagem da samus base esquerda
+		j PRINT_SAMUS # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CHAR_3_DIR:
+		la a0,Samusr3 # recebe a imagem da samus base esquerda
+		j PRINT_SAMUS # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CHAR_JUMP_DIR:
+		la a0,Samusrjump # recebe a imagem da samus base esquerda
+		j PRINT_SAMUS # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+
+		
+PRINT_SAMUS:	### DESENHA A SAMUS
 		la t0,CHAR_POS # carrega a posição do pesonagem em t0
 		lw a1,0(t0) # posição horizontal
 		
@@ -65,7 +160,6 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 		
 		sub a1,a1,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
 		
-		la a0,Samus1 # recebe a imagem da samus base
 		lw a2,4(t0) # posição vertical
 		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
 		call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
@@ -75,13 +169,13 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 		sw s0,0(t0) # colocar o valor para alternar o frame em s0 que é a variavel dos frames
 		
 		j LOOP_JOGO # Loop infinito para manter a execução
-		
+
 KEY2:	#### EXEMPLO LAMAR: VERIFICA SE O BOTÃO FOI PRESSIONADO
 		li t1,0xFF200000		# carrega o endereço de controle do KDMMIO
 		lw t0,0(t1)			# Le bit de Controle Teclado
 		andi t0,t0,0x0001		# mascara o bit menos significativo
 	   	beq t0,zero,NO_PRESS   	   	# Se não há tecla pressionada então vai para FIM
-	  	lw t2,4(t1)  			# le o valor da tecla tecla
+	  	lw t2,4(t1)  			# le o valor da tecla apertada
 		
 		li t0,'a' # coloca o valor da tecla
 		beq t2,t0,COLIS_ESQ # verifica se o usuario pressionou o 'a'
@@ -90,13 +184,10 @@ KEY2:	#### EXEMPLO LAMAR: VERIFICA SE O BOTÃO FOI PRESSIONADO
 		beq t2,t0,COLIS_DIR # verifica se o usuario pressionou o 'd'
 		
 		li t0,'w' # coloca o valor da tecla
-		beq t2,t0,CHAR_CIMA # verifica se o usuario pressionou o 'w'
+		beq t2,t0,START_JUMP # verifica se o usuario pressionou o 'w'
 		
-		li t0,'s' # coloca o valor da tecla
-		beq t2,t0,CHAR_BAIXO # verifica se o usuario pressionou o 's'
-		
-		la t3,LAST_DIREC
-		sw t0,0(t3)
+		#li t0,'s' # coloca o valor da tecla
+		#beq t2,t0,COLIS_DOWN # verifica se o usuario pressionou o 's'
 		
 NO_PRESS:		ret				# retorna
 	
@@ -104,7 +195,7 @@ PRINT:		#### PREPARATIVOS PARA O BITMAP DISPLAY
 		li t0,0xFF0  	# Carregar os primeiros valores para o frame 0
 		add t0,t0,a3 	# Adicionar valor do frame, se for o (frame 0 a3 = 0) (frame 1 a3 = 1)
 		slli t0,t0,20	# Adicionar o resto dos zeros (0 0000) SHIFT DE 20 BITS PRA ESQUERDA
-		 
+		
 		add t0,t0,a1 # recebe o primeiro endereço da imagem do bitmap display para começar a percorrer
 		
 		li t1,320 # recebe tamanho total da tela do bitmap display também
@@ -168,31 +259,6 @@ PRINT_LINHA: # PARA COMEÇAR A DESENHAR NO BITMAP DISPLAY
 		
 		ret
 		
-PRINT_MAPA:	#### PREPARATIVOS PARA O BITMAP DISPLAY
-		### ORGANIZANDO O BITMAP DISPLAY
-		li t0,0xFF0  	# Carregar os primeiros valores para o frame 0
-		add t0,t0,a3 	# Adicionar valor do frame, se for o (frame 0 a3 = 0) (frame 1 a3 = 1)
-		slli t0,t0,20	# Adicionar o resto dos zeros (0 0000) SHIFT DE 20 BITS PRA ESQUERDA
-		
-		add t0,t0,a1 # recebe o primeiro endereço da imagem do bitmap display para começar a percorrer
-		
-		li t1,320 # recebe tamanho total da tela do bitmap display também
-		mul t1,t1,a2 # multiplicando t1 pelo valor do Y da imagem
-		add t0,t0,t1 # adicionar tudo no endereço do bitmap display mesmo
-		
-		### ORGANIZANDO O BIT INICIAL DO MAPA
-		addi t1,a0,8 # Apenas pular a altura e largura do arquivo de imagem
-		
-		mv t2,zero # zera os dois contadores para começar o processo
-		mv t3,zero
-		
-		lw t4,0(a0) # pega a largura da imagem
-		lw t5,4(a0) # pega a altura da imagem
-		
-		la a6,MAP_POS # pega a posição atual do mapa para printar o lugar certo
-		lw t6,0(a6)
-		add t1,t1,t6
-
 COLIS_ESQ:	#### confere se pode andar pra direita
 		### CARREGANDO A POSIÇÃO DA SAMUS
 	    	la t0, CHAR_POS	# Carrega a posição atual da Samus
@@ -207,7 +273,7 @@ COLIS_ESQ:	#### confere se pode andar pra direita
 	    	mul t5,t2,t4    # Multiplica a linha pela largura para obter o offset da linha
 	    	add t5,t5,t1    # Adiciona a posição X para obter o endereço exato
 		
-		addi t3,a0,6 ### pula os valores de tamanho da imagem do cenario 
+		addi t3,a0,12 ### pula os valores de tamanho da imagem do cenario e o valor para a samus se aproximar igualmente da parede
 		#addi t5,t5,-2
 		#add t3,a0,zero
 	    	add t3,t3,t5	# adiciona todo o offset
@@ -271,6 +337,89 @@ VERIFICA_PIXEIS_DIR: ### Verificar as duas colunas à direita
 COLISAO_DET_DIR:
 	    	ret
 
+JUMP:	#### executa todas as etapas do pulo
+		### pega os valores de gravidade, se for 0 ou o valor maximo do salto, o salto é encerrado
+		la a0,GRAVIDADE
+		lh a1,0(a0)
+		
+		add a2,zero,zero
+		beq a1,a2,END_JUMP # se o valor de gravidade for 0, não está ocorrendo salto e nada precisa ser feito
+		addi a2,zero,50
+		beq a1,a2,END_JUMP # se o valor de gravidade for o maximo definido acima, não está mais ocorrendo salto e nada precisa ser feito
+		
+		### CARREGANDO A POSIÇÃO DA SAMUS
+	    	la t0, CHAR_POS	# Carrega a posição atual da Samus
+	    	lw t1, 0(t0) # Carrega a posição X atual da Samus (horizontal)
+	    	lw t2, 4(t0) # Carrega a posição Y atual da Samus (vertical)
+		###addi t2,t2,31 # adiciona o tamanho da samus para verificar a parte de baixo da hitbox (APENAS PARA BAIXO)
+		addi t2,t2,-2
+	    	# Obter o tamanho da linha de pixels do cenario1
+	    	la a0,cenario1 # Carrega o endereço do cenario1
+	    	lw t4,0(a0)    # Carrega o tamanho da linha de pixels (x) do cenario1
+		
+	    	# Calcular o offset para a posição da Samus no cenário
+	    	mul t5,t2,t4    # Multiplica a linha pela altura para obter o offset da linha
+	    	add t5,t5,t1    # Adiciona a posição X(largura) para obter o endereço exatao
+		
+		addi t3,a0,14 ### pula os valores de tamanho da imagem do cenario e alguns para não verificar demais a esquerda
+	    	add t3,t3,t5	# adiciona todo o offset
+	    	
+	    	li a1,8 # contador de 00 colunas para hitbox de cima da samus
+	    	li t6,0x000000  # Valor preto
+	    	
+VERIF_PIXEIS_UP: ### Verificar se as duas colunas à direita são pretas (0x000000)
+		lw t1,0(t3)	# Carrega o pixel da linha 1 à acima
+	    	bne t1,t6,END_JUMP
+	    	
+	    	lw t1,1280(t3)
+	    	#addi t1,t1,1280	# Carrega o pixel da linha 2 à acima
+	    	bne t1,t6,END_JUMP
+		##############
+		addi a1,a1,-1
+		addi t3,t3,1
+		bnez a1,VERIF_PIXEIS_UP
+		##############
+		j CHAR_UP
+#COLISAO_DET_UP: PRIMEIRA FUNÇÃO PARA QUANDO ACHASSE COLISÃO, APENAS NÂO EXECUTAVA A SUBIDA, AGORA PRECISAMOS DA "END_JUMP"	
+#	    	ret
+	    	
+COLIS_DOWN:	#### confere se pode andar pra direita
+		### CARREGANDO A POSIÇÃO DA SAMUS
+	    	la t0, CHAR_POS	# Carrega a posição atual da Samus
+	    	lw t1, 0(t0) # Carrega a posição X atual da Samus (horizontal)
+	    	lw t2, 4(t0) # Carrega a posição Y atual da Samus (vertical)
+		###addi t2,t2,31 # adiciona o tamanho da samus para verificar a parte de baixo da hitbox (APENAS PARA BAIXO)
+		addi t2,t2,31
+	    	# Obter o tamanho da linha de pixels do cenario1
+	    	la a0,cenario1 # Carrega o endereço do cenario1
+	    	lw t4,0(a0)    # Carrega o tamanho da linha de pixels (x) do cenario1
+		
+	    	# Calcular o offset para a posição da Samus no cenário
+	    	mul t5,t2,t4    # Multiplica a linha pela altura para obter o offset da linha
+	    	add t5,t5,t1    # Adiciona a posição X(largura) para obter o endereço exatao
+		
+		addi t3,a0,14 ### pula os valores de tamanho da imagem do cenario e alguns para não verificar demais a esquerda
+	    	add t3,t3,t5	# adiciona todo o offset
+	    	
+	    	li a1,8 # contador de 00 colunas para hitbox de cima da samus
+	    	li t6,0x000000  # Valor preto
+	    	
+VERIF_PIXEIS_DOWN: ### Verificar se as duas colunas à direita são pretas (0x000000)
+		lw t1,0(t3)	# Carrega o pixel da linha 1 à acima
+	    	bne t1,t6,COLISAO_DET_DOWN
+	    	
+	    	lw t1,1280(t3)
+	    	#addi t1,t1,1280	# Carrega o pixel da linha 2 à acima
+	    	bne t1,t6,COLISAO_DET_DOWN
+		##############
+		addi a1,a1,-1
+		addi t3,t3,1
+		bnez a1,VERIF_PIXEIS_DOWN
+		##############
+		j CHAR_DOWN
+COLISAO_DET_DOWN:
+	    	ret
+
 CHAR_ESQ: #### MOVIMENTA A SAMUS PARA A ESQUERDA
 
 		la t0,MAP_POS
@@ -286,7 +435,7 @@ CHAR_ESQ: #### MOVIMENTA A SAMUS PARA A ESQUERDA
 		
 		li t0,'a' # coloca o valor da tecla
 		la t3,LAST_DIREC # carrega a variavel de ultima direção da samus em t3
-		sw t0,0(t3) # salva a ultima direção da samus como esquerda
+		sb t0,0(t3) # salva a ultima direção da samus como esquerda
 		
 		ret
 		
@@ -303,25 +452,99 @@ CHAR_DIR: #### MOVIMENTA A SAMUS PARA A direita
 		
 		li t0,'d' # coloca o valor da tecla
 		la t3,LAST_DIREC # carrega a variavel de ultima direção da samus em t3
-		sw t0,0(t3) # salva a ultima direção da samus como direita
+		sb t0,0(t3) # salva a ultima direção da samus como direita
 		
 		ret
 		
-CHAR_CIMA: #### MOVIMENTA A SAMUS PARA cima
+CHAR_UP: #### MOVIMENTA A SAMUS PARA cima
 		la t0,CHAR_POS # carrega posiçao da samus em t0		
 		lw t1,4(t0) # carrega o y da posição para alterar
 		addi t1,t1,-2 # aumenta o valor do y, para ir para a cima
 		sw t1,4(t0) # coloca o valor de volta no char_pos
 		
+		### adiciona 1 no valor do salto
+		la a0,GRAVIDADE
+		lh a1,0(a0)
+		addi a1,a1,1
+		sh a1,0(a0)
+		
 		ret
 		
-CHAR_BAIXO: #### MOVIMENTA A SAMUS PARA baixo
+CHAR_DOWN: #### MOVIMENTA A SAMUS PARA baixo
 		la t0,CHAR_POS # carrega posiçao da samus em t0
 		lw t1,4(t0) # carrega o y da posição para alterar
 		addi t1,t1,2 # aumenta o valor do y, para ir para a cima
 		sw t1,4(t0) # coloca o valor de volta no char_pos
 		
 		ret
-		
-		
 
+GRAVID_DOWN:	#### funçao para descer
+		la a0,GRAVIDADE
+		lh a1,0(a0)
+		
+		add a2,zero,zero
+		beq a1,a2,COLIS_DOWN
+
+START_JUMP: ####### inicia os valores para que o pulo ocorra
+		la a0,GRAVIDADE
+		lh a1,0(a0)
+		
+		add a2,zero,zero
+		bne a1,a2,NO_FLOOR
+		
+		addi a2,a2,1
+		sh a2,0(a0)
+FLOOR:	#### confere se tem chão pra pular
+		### CARREGANDO A POSIÇÃO DA SAMUS
+	    	la t0, CHAR_POS	# Carrega a posição atual da Samus
+	    	lw t1, 0(t0) # Carrega a posição X atual da Samus (horizontal)
+	    	lw t2, 4(t0) # Carrega a posição Y atual da Samus (vertical)
+		###addi t2,t2,31 # adiciona o tamanho da samus para verificar a parte de baixo da hitbox (APENAS PARA BAIXO)
+		addi t2,t2,31
+	    	# Obter o tamanho da linha de pixels do cenario1
+	    	la a0,cenario1 # Carrega o endereço do cenario1
+	    	lw t4,0(a0)    # Carrega o tamanho da linha de pixels (x) do cenario1
+		
+	    	# Calcular o offset para a posição da Samus no cenário
+	    	mul t5,t2,t4    # Multiplica a linha pela altura para obter o offset da linha
+	    	add t5,t5,t1    # Adiciona a posição X(largura) para obter o endereço exatao
+		
+		addi t3,a0,14 ### pula os valores de tamanho da imagem do cenario e alguns para não verificar demais a esquerda
+	    	add t3,t3,t5	# adiciona todo o offset
+	    	
+	    	li a1,8 # contador de 00 colunas para hitbox de cima da samus
+	    	li t6,0x000000  # Valor preto
+	    	
+VERIF_FLOOR: ### Verificar se as duas colunas à direita são pretas (0x000000)
+		lw t1,0(t3)	# Carrega o pixel da linha 1 à acima
+	    	bne t1,t6,DETEC_FLOOR
+	    	
+	    	lw t1,1280(t3)
+	    	#addi t1,t1,1280	# Carrega o pixel da linha 2 à acima
+	    	bne t1,t6,DETEC_FLOOR
+		##############
+		addi a1,a1,-1
+		addi t3,t3,1
+		bnez a1,VERIF_FLOOR
+		##############
+		j NO_FLOOR
+DETEC_FLOOR: ### TUDO ISSO PRA PODER PULAR
+	    	la a0,GRAVIDADE
+		lh a1,0(a0)
+		
+		addi a1,a1,1
+		sh a1,0(a0)
+		
+NO_FLOOR:	
+		ret
+
+END_JUMP: #### termina o pulo, colocando o valor 0 de volta na gravidade, o que libera a descida
+		la a0,GRAVIDADE #
+		sh zero,0(a0)
+		ret
+		
+		
+		
+		
+		
+		
