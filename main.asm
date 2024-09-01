@@ -20,7 +20,8 @@ CHAR_POS: .word 630,161
 LAST_DIREC: .word 'd'
 FRAME_SAMUS: .half 0
 GRAVIDADE: .half 0
-DELAY: .half 0
+DELAY_JUMP: .half 0
+DELAY_WALK: .half 0
 
 .text
 SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -58,7 +59,7 @@ LOOP_MENU:
 		j LOOP_JOGO
 
 LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
-		la a0,DELAY
+		la a0,DELAY_JUMP
 		lh a1,0(a0)
 		addi a1,a1,1
 		sh a1,0(a0)
@@ -66,8 +67,10 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 		bne a1,a2,SKIP_JUMP
 		
 		sh zero,0(a0)
-		call GRAVID_DOWN
+		
 		call JUMP
+		call GRAVID_DOWN
+
 SKIP_JUMP:
 		call KEY2 # chama função para verificar se algum botão foi apertado
 		
@@ -186,10 +189,15 @@ KEY2:	#### EXEMPLO LAMAR: VERIFICA SE O BOTÃO FOI PRESSIONADO
 		li t0,'w' # coloca o valor da tecla
 		beq t2,t0,START_JUMP # verifica se o usuario pressionou o 'w'
 		
-		#li t0,'s' # coloca o valor da tecla
-		#beq t2,t0,COLIS_DOWN # verifica se o usuario pressionou o 's'
+		#la a0,FRAME_SAMUS # verifica se a samus está no chão
+		#lh a1,0(a0)
+		#li a2,4
+		#beq  a1,a2,NO_PRESS
 		
-NO_PRESS:		ret				# retorna
+		#la a0,FRAME_SAMUS # se a Samus estiver parada e no chão coloca o frame inicial dela como o atual
+		#sh zero,0(a0)
+		
+NO_PRESS:	ret
 	
 PRINT:		#### PREPARATIVOS PARA O BITMAP DISPLAY
 		li t0,0xFF0  	# Carregar os primeiros valores para o frame 0
@@ -296,6 +304,13 @@ VERIFICA_PIXEIS_ESQ: ### Verificar as duas colunas à direita
 		##############
 		j CHAR_ESQ
 COLISAO_DET_ESQ:
+		la a0,GRAVIDADE # verifica se a samus está no chão
+		lh a1,0(a0)
+		bnez a1,COLISAO_DET_ESQ_RET
+		
+		la a0,FRAME_SAMUS # se a Samus estiver parada e no chão coloca o frame inicial dela como o atual
+		sh zero,0(a0)
+COLISAO_DET_ESQ_RET:
 	    	ret
 
 COLIS_DIR:	#### confere se pode andar pra direita
@@ -335,6 +350,13 @@ VERIFICA_PIXEIS_DIR: ### Verificar as duas colunas à direita
 		##############
 		j CHAR_DIR
 COLISAO_DET_DIR:
+		la a0,GRAVIDADE # verifica se a samus está no chão
+		lh a1,0(a0)
+		bnez a1,COLISAO_DET_DIR_RET
+		
+		la a0,FRAME_SAMUS # se a Samus estiver parada e no chão coloca o frame inicial dela como o atual
+		sh zero,0(a0)
+COLISAO_DET_DIR_RET:
 	    	ret
 
 JUMP:	#### executa todas as etapas do pulo
@@ -344,6 +366,8 @@ JUMP:	#### executa todas as etapas do pulo
 		
 		add a2,zero,zero
 		beq a1,a2,END_JUMP # se o valor de gravidade for 0, não está ocorrendo salto e nada precisa ser feito
+		addi a2,zero,1
+		beq a1,a2,END_JUMP # se o valor de gravidade for 1, a samus está descendo e nada precisa ser feito
 		addi a2,zero,50
 		beq a1,a2,END_JUMP # se o valor de gravidade for o maximo definido acima, não está mais ocorrendo salto e nada precisa ser feito
 		
@@ -351,7 +375,7 @@ JUMP:	#### executa todas as etapas do pulo
 	    	la t0, CHAR_POS	# Carrega a posição atual da Samus
 	    	lw t1, 0(t0) # Carrega a posição X atual da Samus (horizontal)
 	    	lw t2, 4(t0) # Carrega a posição Y atual da Samus (vertical)
-		###addi t2,t2,31 # adiciona o tamanho da samus para verificar a parte de baixo da hitbox (APENAS PARA BAIXO)
+		###addi t2,t2,31 # adiciona o tamanho da samus para verificar a parte de cima da hitbox (APENAS PARA CIMA)
 		addi t2,t2,-2
 	    	# Obter o tamanho da linha de pixels do cenario1
 	    	la a0,cenario1 # Carrega o endereço do cenario1
@@ -380,10 +404,16 @@ VERIF_PIXEIS_UP: ### Verificar se as duas colunas à direita são pretas (0x0000
 		bnez a1,VERIF_PIXEIS_UP
 		##############
 		j CHAR_UP
+		
+END_JUMP: #### termina o pulo, colocando o valor 1 de volta na gravidade, o que libera a descida
+		la a0,GRAVIDADE #
+		addi a1,zero,1
+		sh a1,0(a0)
+		ret
 #COLISAO_DET_UP: PRIMEIRA FUNÇÃO PARA QUANDO ACHASSE COLISÃO, APENAS NÂO EXECUTAVA A SUBIDA, AGORA PRECISAMOS DA "END_JUMP"	
 #	    	ret
 	    	
-COLIS_DOWN:	#### confere se pode andar pra direita
+COLIS_DOWN:	#### confere se pode andar pra baixo
 		### CARREGANDO A POSIÇÃO DA SAMUS
 	    	la t0, CHAR_POS	# Carrega a posição atual da Samus
 	    	lw t1, 0(t0) # Carrega a posição X atual da Samus (horizontal)
@@ -418,15 +448,24 @@ VERIF_PIXEIS_DOWN: ### Verificar se as duas colunas à direita são pretas (0x00
 		##############
 		j CHAR_DOWN
 COLISAO_DET_DOWN:
+		la a0,GRAVIDADE
+		sh zero,0(a0)
+		
+		la a0,FRAME_SAMUS
+		lh a1,0(a0)
+		addi a2,zero,4
+		bne a1,a2,COLISAO_DET_DOWN_RET
+		la a0,FRAME_SAMUS # se a Samus estiver voando,coloca o frame inicial dela como o atual
+		sh zero,0(a0)
+		
+COLISAO_DET_DOWN_RET:
 	    	ret
 
 CHAR_ESQ: #### MOVIMENTA A SAMUS PARA A ESQUERDA
-
 		la t0,MAP_POS
 		lw t1,0(t0)
 		addi t1,t1,-2
 		sw t1,0(t0)
-		
 		
 		la t0,CHAR_POS # carrega posiçao da samus em t0
 		lw t1,0(t0) # carrega o x da posição para alterar
@@ -437,7 +476,27 @@ CHAR_ESQ: #### MOVIMENTA A SAMUS PARA A ESQUERDA
 		la t3,LAST_DIREC # carrega a variavel de ultima direção da samus em t3
 		sb t0,0(t3) # salva a ultima direção da samus como esquerda
 		
-		ret
+		la a0,GRAVIDADE # verifica se a samus está no chão
+		lh a1,0(a0)
+		bnez a1,CHAR_ESQ_RET # se não estiver pula todo o processo de animação
+		
+		la a0,DELAY_WALK # BLOCO DE DELAY PARA ANIMACAO DE ANDAR
+		lh a1,0(a0)
+		addi a1,a1,1
+		sh a1,0(a0)
+		addi a2,zero,2
+		blt a1,a2,CHAR_ESQ_RET
+		sh zero,0(a0)
+		
+		la a0,FRAME_SAMUS # se a Samus estiver no chão coloca os frames de animação
+		lh a1,0(a0)
+		addi a1,a1,1
+		sh a1,0(a0)
+		
+		li a2,4 # se o frame já for o de pulo, coloca o primeiro de andar de novo
+		beq a1,a2,WALK_INIT_ANIME
+		
+CHAR_ESQ_RET:	ret
 		
 CHAR_DIR: #### MOVIMENTA A SAMUS PARA A direita
 		la t0,MAP_POS
@@ -453,6 +512,32 @@ CHAR_DIR: #### MOVIMENTA A SAMUS PARA A direita
 		li t0,'d' # coloca o valor da tecla
 		la t3,LAST_DIREC # carrega a variavel de ultima direção da samus em t3
 		sb t0,0(t3) # salva a ultima direção da samus como direita
+		
+		la a0,GRAVIDADE # verifica se a samus está no chão
+		lh a1,0(a0)
+		bnez a1,CHAR_DIR_RET # se não estiver pula todo o processo de animação
+		
+		la a0,DELAY_WALK # BLOCO DE DELAY PARA ANIMACAO DE ANDAR
+		lh a1,0(a0)
+		addi a1,a1,1
+		sh a1,0(a0)
+		addi a2,zero,2
+		blt a1,a2,CHAR_ESQ_RET
+		sh zero,0(a0)
+		
+		la a0,FRAME_SAMUS # se a Samus estiver no chão coloca os frames de animação
+		lh a1,0(a0)
+		addi a1,a1,1
+		sh a1,0(a0)
+		
+		li a2,4 # se o frame já for o de pulo, coloca o primeiro de andar de novo
+		beq a1,a2,WALK_INIT_ANIME
+		
+CHAR_DIR_RET:	ret
+
+WALK_INIT_ANIME:
+		li a1,1
+		sh a1,0(a0)
 		
 		ret
 		
@@ -476,71 +561,40 @@ CHAR_DOWN: #### MOVIMENTA A SAMUS PARA baixo
 		addi t1,t1,2 # aumenta o valor do y, para ir para a cima
 		sw t1,4(t0) # coloca o valor de volta no char_pos
 		
+		la a0,GRAVIDADE
+		li a1,1
+		sh a1,0(a0)
+		
+		la a0,FRAME_SAMUS # coloca o frame da samus pulando já
+		li a1,4
+		sh a1,0(a0)
+		
 		ret
 
 GRAVID_DOWN:	#### funçao para descer
-		la a0,GRAVIDADE
-		lh a1,0(a0)
+		#la a0,GRAVIDADE
+		#lh a1,0(a0)
+		la a0,GRAVIDADE # Carrega o valor de GRAVIDADE no registrador a0
+		lh a0,0(a0)
+    		li a1,2 # Carrega o valor 2 no registrador a1
+    		blt a0,a1,COLIS_DOWN
 		
-		add a2,zero,zero
-		beq a1,a2,COLIS_DOWN
+		ret
 
 START_JUMP: ####### inicia os valores para que o pulo ocorra
 		la a0,GRAVIDADE
 		lh a1,0(a0)
 		
-		add a2,zero,zero
-		bne a1,a2,NO_FLOOR
+		bnez a1,NO_FLOOR
 		
-		addi a2,a2,1
-		sh a2,0(a0)
-FLOOR:	#### confere se tem chão pra pular
-		### CARREGANDO A POSIÇÃO DA SAMUS
-	    	la t0, CHAR_POS	# Carrega a posição atual da Samus
-	    	lw t1, 0(t0) # Carrega a posição X atual da Samus (horizontal)
-	    	lw t2, 4(t0) # Carrega a posição Y atual da Samus (vertical)
-		###addi t2,t2,31 # adiciona o tamanho da samus para verificar a parte de baixo da hitbox (APENAS PARA BAIXO)
-		addi t2,t2,31
-	    	# Obter o tamanho da linha de pixels do cenario1
-	    	la a0,cenario1 # Carrega o endereço do cenario1
-	    	lw t4,0(a0)    # Carrega o tamanho da linha de pixels (x) do cenario1
+		addi a1,zero,2
+		sh a1,0(a0)
 		
-	    	# Calcular o offset para a posição da Samus no cenário
-	    	mul t5,t2,t4    # Multiplica a linha pela altura para obter o offset da linha
-	    	add t5,t5,t1    # Adiciona a posição X(largura) para obter o endereço exatao
-		
-		addi t3,a0,14 ### pula os valores de tamanho da imagem do cenario e alguns para não verificar demais a esquerda
-	    	add t3,t3,t5	# adiciona todo o offset
-	    	
-	    	li a1,8 # contador de 00 colunas para hitbox de cima da samus
-	    	li t6,0x000000  # Valor preto
-	    	
-VERIF_FLOOR: ### Verificar se as duas colunas à direita são pretas (0x000000)
-		lw t1,0(t3)	# Carrega o pixel da linha 1 à acima
-	    	bne t1,t6,DETEC_FLOOR
-	    	
-	    	lw t1,1280(t3)
-	    	#addi t1,t1,1280	# Carrega o pixel da linha 2 à acima
-	    	bne t1,t6,DETEC_FLOOR
-		##############
-		addi a1,a1,-1
-		addi t3,t3,1
-		bnez a1,VERIF_FLOOR
-		##############
-		j NO_FLOOR
-DETEC_FLOOR: ### TUDO ISSO PRA PODER PULAR
-	    	la a0,GRAVIDADE
-		lh a1,0(a0)
-		
-		addi a1,a1,1
+		la a0,FRAME_SAMUS # coloca o frame da samus pulando já
+		li a1,4
 		sh a1,0(a0)
 		
 NO_FLOOR:	
-		ret
-
-END_JUMP: #### termina o pulo, colocando o valor 0 de volta na gravidade, o que libera a descida
-		la a0,GRAVIDADE #
-		sh zero,0(a0)
 		ret
 		
 		
