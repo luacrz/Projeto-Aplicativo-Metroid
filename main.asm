@@ -1,19 +1,28 @@
 .data
-.include "TitleScreen.s" # Inclui os dados da sprite
-.include "cenario1.s"
-.include "Samusr0.s"
-.include "Samusl0.s"
-.include "Samusr1.s"
-.include "Samusl1.s"
-.include "Samusr2.s"
-.include "Samusl2.s"
-.include "Samusr3.s"
-.include "Samusl3.s"
-.include "Samusrjump.s"
-.include "Samusljump.s"
+.include "mapsitens/TitleScreen.s" # Inclui os dados da sprite
+.include "mapsitens/cenario1.s"
+.include "mapsitens/statusfull.s"
+.include "mapsitens/number0.s"
+.include "mapsitens/number1.s"
+.include "mapsitens/number2.s"
+.include "mapsitens/number3.s"
+.include "mapsitens/number4.s"
+.include "mapsitens/number5.s"
+.include "mapsitens/number6.s"
+.include "mapsitens/number7.s"
+.include "mapsitens/number8.s"
+.include "mapsitens/number9.s"
 
-.include "Samusr01.s"
-.include "Samustransparente1.s"
+.include "samus/Samusr0.s"
+.include "samus/Samusl0.s"
+.include "samus/Samusr1.s"
+.include "samus/Samusl1.s"
+.include "samus/Samusr2.s"
+.include "samus/Samusl2.s"
+.include "samus/Samusr3.s"
+.include "samus/Samusl3.s"
+.include "samus/Samusrjump.s"
+.include "samus/Samusljump.s"
 
 MAP_POS: .word 480,0
 CHAR_POS: .word 630,161
@@ -22,6 +31,7 @@ FRAME_SAMUS: .half 0
 GRAVIDADE: .half 0
 DELAY_JUMP: .half 0
 DELAY_WALK: .half 0
+LIFE_SAMUS: .half 0
 
 .text
 SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -63,7 +73,7 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 		lh a1,0(a0)
 		addi a1,a1,1
 		sh a1,0(a0)
-		addi a2,zero,30
+		addi a2,zero,25
 		bne a1,a2,SKIP_JUMP
 		
 		sh zero,0(a0)
@@ -166,6 +176,27 @@ PRINT_SAMUS:	### DESENHA A SAMUS
 		lw a2,4(t0) # posição vertical
 		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
 		call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+		
+		########## IMPRIMIR STATUS NA TELA, VIDA E ETC
+		la a0,statusfull #INICIA O REGISTRADOR COM A IMAGEM DO MENU
+		li a1,64 # LARGURA DA IMAGEM
+		li a2,32 # ALTURA DA IMAGEM
+		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+		call PRINT
+		
+	    	la t0,LIFE_SAMUS # Carrega o endereço da variável VIDA
+	    	lw t1,0(t0)# Carrega o valor de VIDA para o registrador t1
+	    
+	    	# Calcula o dígito das unidades
+	    	li t2,10 # Carrega o valor 10 no registrador t2
+	    	rem t3,t1,t2 # t3 = t1 % 10 (dígito das unidades)
+	
+	    	# Calcula o dígito das dezenas
+	    	div t1,t1,t2 # t1 = t1 / 10 (dividindo para remover o dígito das unidades)
+	    	rem t4,t1,t2 # t4 = t1 % 10 (dígito das dezenas)
+	
+	    # Agora t3 contém o dígito das unidades e t4 contém o dígito das dezenas
+	    # Você pode usar esses valores para imprimir os sprites correspondentes na tela
 		
 		### AQUI O FRAME É ALTERADO
 		li t0,0xFF200604 # valor para alternar os frames
@@ -368,7 +399,7 @@ JUMP:	#### executa todas as etapas do pulo
 		beq a1,a2,END_JUMP # se o valor de gravidade for 0, não está ocorrendo salto e nada precisa ser feito
 		addi a2,zero,1
 		beq a1,a2,END_JUMP # se o valor de gravidade for 1, a samus está descendo e nada precisa ser feito
-		addi a2,zero,50
+		addi a2,zero,60
 		beq a1,a2,END_JUMP # se o valor de gravidade for o maximo definido acima, não está mais ocorrendo salto e nada precisa ser feito
 		
 		### CARREGANDO A POSIÇÃO DA SAMUS
@@ -596,9 +627,4 @@ START_JUMP: ####### inicia os valores para que o pulo ocorra
 		
 NO_FLOOR:	
 		ret
-		
-		
-		
-		
-		
-		
+	
