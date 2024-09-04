@@ -31,7 +31,7 @@ FRAME_SAMUS: .half 0
 GRAVIDADE: .half 0
 DELAY_JUMP: .half 0
 DELAY_WALK: .half 0
-LIFE_SAMUS: .half 0
+LIFE_SAMUS: .word 98
 
 .text
 SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -180,23 +180,145 @@ PRINT_SAMUS:	### DESENHA A SAMUS
 		########## IMPRIMIR STATUS NA TELA, VIDA E ETC
 		la a0,statusfull #INICIA O REGISTRADOR COM A IMAGEM DO MENU
 		li a1,64 # LARGURA DA IMAGEM
-		li a2,32 # ALTURA DA IMAGEM
+		li a2,32# ALTURA DA IMAGEM
 		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
 		call PRINT
 		
 	    	la t0,LIFE_SAMUS # Carrega o endereço da variável VIDA
 	    	lw t1,0(t0)# Carrega o valor de VIDA para o registrador t1
 	    
+	    	# Calcula o dígito das dezenas
+	    	li t2,10 # Carrega o valor 10 no registrador t2
+	    	div t1,t1,t2 # t1 = t1 / 10 (dividindo para remover o dígito das unidades)
+	    	rem t4,t1,t2 # t4 = t1 % 10 (dígito das dezenas)
+
+	
+	    	# Agora t3 contém o dígito das unidades e t4 contém o dígito das dezenas
+	    	# Você pode usar esses valores para imprimir os sprites correspondentes na tela
+	    	
+		add a2,zero,zero
+		beq t4,a2,CARACTER1_0
+		addi a2,zero,1
+		beq t4,a2,CARACTER1_1
+		addi a2,zero,2
+		beq t4,a2,CARACTER1_2
+		addi a2,zero,3
+		beq t4,a2,CARACTER1_3
+		addi a2,zero,4
+		beq t4,a2,CARACTER1_4
+		addi a2,zero,5
+		beq t4,a2,CARACTER1_5
+		addi a2,zero,6
+		beq t4,a2,CARACTER1_6
+		addi a2,zero,7
+		beq t4,a2,CARACTER1_7
+		addi a2,zero,8
+		beq t4,a2,CARACTER1_8
+		addi a2,zero,9
+		beq t4,a2,CARACTER1_9
+CARACTER1_0:
+		la a0,number0 # recebe a imagem da samus base esquerda
+		j PRINT_N1_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER1_1:
+		la a0,number1 # recebe a imagem da samus base esquerda
+		j PRINT_N1_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER1_2:
+		la a0,number2 # recebe a imagem da samus base esquerda
+		j PRINT_N1_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER1_3:
+		la a0,number3 # recebe a imagem da samus base esquerda
+		j PRINT_N1_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER1_4:
+		la a0,number4 # recebe a imagem da samus base esquerda
+		j PRINT_N1_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER1_5:
+		la a0,number5 # recebe a imagem da samus base esquerda
+		j PRINT_N1_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER1_6:
+		la a0,number6 # recebe a imagem da samus base esquerda
+		j PRINT_N1_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER1_7:
+		la a0,number7 # recebe a imagem da samus base esquerda
+		j PRINT_N1_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER1_8:
+		la a0,number8 # recebe a imagem da samus base esquerda
+		j PRINT_N1_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER1_9:
+		la a0,number9 # recebe a imagem da samus base esquerda
+		j PRINT_N1_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+		
+PRINT_N1_LIFE:	
+		########## IMPRIMIR O PRIMEIRO DIGITO DA VIDA
+		li a1,89 # LARGURA DA IMAGEM
+		li a2,32# ALTURA DA IMAGEM
+		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+		call PRINT
+		
+		la t0,LIFE_SAMUS # Carrega o endereço da variável VIDA
+	    	lw t1,0(t0)# Carrega o valor de VIDA para o registrador t1
+	    
 	    	# Calcula o dígito das unidades
 	    	li t2,10 # Carrega o valor 10 no registrador t2
 	    	rem t3,t1,t2 # t3 = t1 % 10 (dígito das unidades)
-	
-	    	# Calcula o dígito das dezenas
-	    	div t1,t1,t2 # t1 = t1 / 10 (dividindo para remover o dígito das unidades)
-	    	rem t4,t1,t2 # t4 = t1 % 10 (dígito das dezenas)
-	
-	    # Agora t3 contém o dígito das unidades e t4 contém o dígito das dezenas
-	    # Você pode usar esses valores para imprimir os sprites correspondentes na tela
+	    	addi t3,t3,0
+		
+		addi a2,zero,0
+		beq t3,a2,CARACTER2_0
+		addi a2,zero,1
+		beq t3,a2,CARACTER2_1
+		addi a2,zero,2
+		beq t3,a2,CARACTER2_2
+		addi a2,zero,3
+		beq t3,a2,CARACTER2_3
+		addi a2,zero,4
+		beq t3,a2,CARACTER2_4
+		addi a2,zero,5
+		beq t3,a2,CARACTER2_5
+		addi a2,zero,6
+		beq t3,a2,CARACTER2_6
+		addi a2,zero,7
+		beq t3,a2,CARACTER2_7
+		addi a2,zero,8
+		beq t3,a2,CARACTER2_8
+		addi a2,zero,9
+		beq t3,a2,CARACTER2_9
+CARACTER2_0:
+		la a0,number0 # recebe a imagem da samus base esquerda
+		j PRINT_N2_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER2_1:
+		la a0,number1 # recebe a imagem da samus base esquerda
+		j PRINT_N2_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER2_2:
+		la a0,number2 # recebe a imagem da samus base esquerda
+		j PRINT_N2_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER2_3:
+		la a0,number3 # recebe a imagem da samus base esquerda
+		j PRINT_N2_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER2_4:
+		la a0,number4 # recebe a imagem da samus base esquerda
+		j PRINT_N2_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER2_5:
+		la a0,number5 # recebe a imagem da samus base esquerda
+		j PRINT_N2_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER2_6:
+		la a0,number6 # recebe a imagem da samus base esquerda
+		j PRINT_N2_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER2_7:
+		la a0,number7 # recebe a imagem da samus base esquerda
+		j PRINT_N2_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER2_8:
+		la a0,number8 # recebe a imagem da samus base esquerda
+		j PRINT_N2_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+CARACTER2_9:
+		la a0,number9 # recebe a imagem da samus base esquerda
+		j PRINT_N2_LIFE # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+		
+PRINT_N2_LIFE:	
+		########## IMPRIMIR O PRIMEIRO DIGITO DA VIDA
+		li a1,98 # LARGURA DA IMAGEM
+		li a2,32# ALTURA DA IMAGEM
+		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+		call PRINT
 		
 		### AQUI O FRAME É ALTERADO
 		li t0,0xFF200604 # valor para alternar os frames
