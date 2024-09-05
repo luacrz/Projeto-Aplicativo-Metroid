@@ -24,6 +24,23 @@
 .include "samus/Samusrjump.s"
 .include "samus/Samusljump.s"
 
+.include "inimigos/ene1dir.s"
+.include "inimigos/ene1down.s"
+.include "inimigos/ene1esq.s"
+.include "inimigos/ene1up.s"
+.include "inimigos/ene2dir.s"
+.include "inimigos/ene2down.s"
+.include "inimigos/ene2esq.s"
+.include "inimigos/ene2up.s"
+.include "inimigos/ridley1.s"
+.include "inimigos/ridley2.s"
+.include "inimigos/ridleyhit1.s"
+.include "inimigos/ridleyhit2.s"
+.include "inimigos/ridleyjump.s"
+.include "inimigos/ripperdir.s"
+.include "inimigos/ripperesq.s"
+
+
 MAP_POS: .word 480,0
 CHAR_POS: .word 630,161
 LAST_DIREC: .word 'd'
@@ -31,7 +48,8 @@ FRAME_SAMUS: .half 0
 GRAVIDADE: .half 0
 DELAY_JUMP: .half 0
 DELAY_WALK: .half 0
-LIFE_SAMUS: .word 98
+LIFE_SAMUS: .word 56
+ENEM1_POS: .word 704,48
 
 .text
 SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -177,7 +195,26 @@ PRINT_SAMUS:	### DESENHA A SAMUS
 		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
 		call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
 		
-		########## IMPRIMIR STATUS NA TELA, VIDA E ETC
+		######### PRINTAR INIMIGO
+		la t0,ENEM1_POS # carrega a posição do pesonagem em t0
+		lw a1,0(t0) # posição horizontal
+		la t1,MAP_POS
+		lw t1,0(t1)
+		blt a1,t1,PRINT_LIFE
+		addi t1,t1,304
+		blt t1,a1,PRINT_LIFE
+		la a0,ene1dir
+		
+		la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
+		lw a4,0(t1)
+		
+		sub a1,a1,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
+		
+		lw a2,4(t0) # posição vertical
+		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+		call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+		
+PRINT_LIFE:	########## IMPRIMIR STATUS NA TELA, VIDA E ETC
 		la a0,statusfull #INICIA O REGISTRADOR COM A IMAGEM DO MENU
 		li a1,64 # LARGURA DA IMAGEM
 		li a2,32# ALTURA DA IMAGEM
@@ -617,9 +654,16 @@ COLISAO_DET_DOWN_RET:
 CHAR_ESQ: #### MOVIMENTA A SAMUS PARA A ESQUERDA
 		la t0,MAP_POS
 		lw t1,0(t0)
+		la a0,CHAR_POS
+		lw a0,0(a0)
+		sub a0,a0,t1
+		li a1,150
+		bne a0,a1,CHAR_ESQ_ONLY_CHAR
+		
 		addi t1,t1,-2
 		sw t1,0(t0)
 		
+CHAR_ESQ_ONLY_CHAR:
 		la t0,CHAR_POS # carrega posiçao da samus em t0
 		lw t1,0(t0) # carrega o x da posição para alterar
 		addi t1,t1,-2 # diminiu o valor do x, para ir para a esquerda
@@ -654,9 +698,16 @@ CHAR_ESQ_RET:	ret
 CHAR_DIR: #### MOVIMENTA A SAMUS PARA A direita
 		la t0,MAP_POS
 		lw t1,0(t0)
+		la a0,cenario1
+		lw a0,0(a0)
+		sub a0,a0,t1
+		li a1,320
+		beq a0,a1,CHAR_DIR_ONLY_CHAR
+		
 		addi t1,t1,2
 		sw t1,0(t0)
 		
+CHAR_DIR_ONLY_CHAR:
 		la t0,CHAR_POS # carrega posiçao da samus em t0
 		lw t1,0(t0) # carrega o x da posição para alterar
 		addi t1,t1,2 # aumenta o valor do x, para ir para a direita
