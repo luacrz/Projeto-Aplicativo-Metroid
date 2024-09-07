@@ -24,14 +24,14 @@
 .include "samus/Samusrjump.s"
 .include "samus/Samusljump.s"
 
-.include "inimigos/ene1dir.s"
-.include "inimigos/ene1down.s"
-.include "inimigos/ene1esq.s"
-.include "inimigos/ene1up.s"
-.include "inimigos/ene2dir.s"
-.include "inimigos/ene2down.s"
-.include "inimigos/ene2esq.s"
-.include "inimigos/ene2up.s"
+.include "inimigos/zoomer1dir.s"
+.include "inimigos/zoomer1down.s"
+.include "inimigos/zoomer1esq.s"
+.include "inimigos/zoomer1up.s"
+.include "inimigos/zoomer2dir.s"
+.include "inimigos/zoomer2down.s"
+.include "inimigos/zoomer2esq.s"
+.include "inimigos/zoomer2up.s"
 .include "inimigos/ridley1.s"
 .include "inimigos/ridley2.s"
 .include "inimigos/ridleyhit1.s"
@@ -46,10 +46,11 @@ CHAR_POS: .word 630,161
 LAST_DIREC: .word 'd'
 FRAME_SAMUS: .half 0
 GRAVIDADE: .half 0
-DELAY_JUMP: .half 0
+DELAY: .half 0
 DELAY_WALK: .half 0
 LIFE_SAMUS: .word 56
-ENEM1_POS: .word 704,48
+ZOOMER_POS: .word 704,48,0,0,2,0 # x,y,direção que está indo, frame atual (0 ou 1), vida, se está congelado
+SHOT_BEAMS: .word 0,0,0,0,0,0,0,0,0 # posição x,y,ativo ou não. Isso para cada um dos 3 tiros
 
 .text
 SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -87,7 +88,7 @@ LOOP_MENU:
 		j LOOP_JOGO
 
 LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
-		la a0,DELAY_JUMP
+		la a0,DELAY
 		lh a1,0(a0)
 		addi a1,a1,1
 		sh a1,0(a0)
@@ -196,14 +197,91 @@ PRINT_SAMUS:	### DESENHA A SAMUS
 		call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
 		
 		######### PRINTAR INIMIGO
-		la t0,ENEM1_POS # carrega a posição do pesonagem em t0
+		la t0,DELAY
+		lh t0,0(t0)
+		li t1,20
+		li t2,0
+		bne t0,t1,PRINT_ZOOMER
+		call MOVE_ZOOMER
+		
+PRINT_ZOOMER:	la t0,ZOOMER_POS
+		lw t1,16(t0)
+		beqz t1,SKIP_ZOOMER
+		lw t1,8(t0)
+		li t2,0
+		beq t1,t2,ZOOMER_FRAME_DIR0
+		li t2,1
+		beq t1,t2,ZOOMER_FRAME_DOWN0
+		li t2,2
+		beq t1,t2,ZOOMER_FRAME_ESQ0
+		li t2,3
+		beq t1,t2,ZOOMER_FRAME_UP0
+		
+ZOOMER_FRAME_DIR0:
+		lw t1,12(t0)
+		bnez t1,ZOOMER_FRAME_DIR1
+		li t1,1
+		sw t1,12(t0)
+		la a0,zoomer1dir
+		j PRINT_ZOOMER1
+		
+ZOOMER_FRAME_DIR1:
+		li t1,0
+		sw t1,12(t0)
+		la a0,zoomer2dir
+		j PRINT_ZOOMER1
+		
+ZOOMER_FRAME_DOWN0:
+		lw t1,12(t0)
+		bnez t1,ZOOMER_FRAME_DOWN1
+		li t1,1
+		sw t1,12(t0)
+		la a0,zoomer1down
+		j PRINT_ZOOMER1
+		
+ZOOMER_FRAME_DOWN1:
+		li t1,0
+		sw t1,12(t0)
+		la a0,zoomer2down
+		j PRINT_ZOOMER
+		
+ZOOMER_FRAME_ESQ0:
+		lw t1,12(t0)
+		bnez t1,ZOOMER_FRAME_ESQ1
+		li t1,1
+		sw t1,12(t0)
+		la a0,zoomer1esq
+		j PRINT_ZOOMER1
+		
+ZOOMER_FRAME_ESQ1:
+		li t1,0
+		sw t1,12(t0)
+		la a0,zoomer2esq
+		j PRINT_ZOOMER1
+		
+ZOOMER_FRAME_UP0:
+		lw t1,12(t0)
+		bnez t1,ZOOMER_FRAME_UP1
+		li t1,1
+		sw t1,12(t0)
+		la a0,zoomer1up
+		j PRINT_ZOOMER1
+		
+ZOOMER_FRAME_UP1:
+		li t1,0
+		sw t1,12(t0)
+		la a0,zoomer2up
+		j PRINT_ZOOMER1
+
+
+PRINT_ZOOMER1:	la t0,ZOOMER_POS # carrega a posição do pesonagem em t0
 		lw a1,0(t0) # posição horizontal
 		la t1,MAP_POS
 		lw t1,0(t1)
 		blt a1,t1,PRINT_LIFE
 		addi t1,t1,304
 		blt t1,a1,PRINT_LIFE
-		la a0,ene1dir
+		#### LIDA COM TODA A PARTE DE MOVIMENTAR E PRINTAR O ZOOMER, APENAS SE ELE ESTIVER NA TELA
 		
 		la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
 		lw a4,0(t1)
@@ -213,6 +291,16 @@ PRINT_SAMUS:	### DESENHA A SAMUS
 		lw a2,4(t0) # posição vertical
 		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
 		call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+		
+SKIP_ZOOMER:
+		li t6,2
+PRINT_SHOTS:	
+		
+		addi,t6,t6,-1
+		
+		beqz t6,PRINT_LIFE
+		
+		j PRINT_SHOTS
 		
 PRINT_LIFE:	########## IMPRIMIR STATUS NA TELA, VIDA E ETC
 		la a0,statusfull #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -229,7 +317,6 @@ PRINT_LIFE:	########## IMPRIMIR STATUS NA TELA, VIDA E ETC
 	    	div t1,t1,t2 # t1 = t1 / 10 (dividindo para remover o dígito das unidades)
 	    	rem t4,t1,t2 # t4 = t1 % 10 (dígito das dezenas)
 
-	
 	    	# Agora t3 contém o dígito das unidades e t4 contém o dígito das dezenas
 	    	# Você pode usar esses valores para imprimir os sprites correspondentes na tela
 	    	
@@ -378,6 +465,9 @@ KEY2:	#### EXEMPLO LAMAR: VERIFICA SE O BOTÃO FOI PRESSIONADO
 		
 		li t0,'w' # coloca o valor da tecla
 		beq t2,t0,START_JUMP # verifica se o usuario pressionou o 'w'
+		
+		#li t0,'e' # coloca o valor da tecla
+		#beq t2,t0,START_SHOT # verifica se o usuario pressionou o 'e'
 		
 		#la a0,FRAME_SAMUS # verifica se a samus está no chão
 		#lh a1,0(a0)
@@ -800,4 +890,166 @@ START_JUMP: ####### inicia os valores para que o pulo ocorra
 		
 NO_FLOOR:	
 		ret
+		
+MOVE_ZOOMER:	##### TODA A MOVIMENTAÇÃO DO ZOOMER
+		la t0,ZOOMER_POS
+		lw t1,0(t0)
+		lw t2,4(t0)
+		###### todas essas 12 funções são pra mudar a direção quando estiver nos pixeis de mudar
+ZOOMER_VIRA_ESQ0:
+		li t3,704
+		li t4,160
+		bne t1,t3,ZOOMER_VIRA_UP_00
+
+ZOOMER_VIRA_ESQ1:
+		bne t2,t4,ZOOMER_VIRA_UP_00
+		li t1,1 # 1 vai ser o equivalente a indo pra esquerda
+		sw t1,8(t0)
+		j WALK_ZOOMER
+
+
+
+
+ZOOMER_VIRA_UP_00:
+		li t3,656
+		li t4,160
+		bne t1,t3,ZOOMER_VIRA_DIR_00
+		
+ZOOMER_VIRA_UP_10:
+		bne t2,t4,ZOOMER_VIRA_DIR_00
+		li t1,2 # 2 vai ser o equivalente a indo pra cima
+		sw t1,8(t0)
+		j WALK_ZOOMER
+		
+		
+		
+
+ZOOMER_VIRA_DIR_00:
+		li t3,656
+		li t4,64
+		bne t1,t3,ZOOMER_VIRA_UP_01
+		
+ZOOMER_VIRA_DIR_10:
+		bne t2,t4,ZOOMER_VIRA_UP_01
+		li t1,3 # 3 vai ser o equivalente a indo pra direita
+		sw t1,8(t0)
+		j WALK_ZOOMER
+		
+		
+		
+		
+		
+ZOOMER_VIRA_UP_01:
+		li t3,672
+		li t4,64
+		bne t1,t3,ZOOMER_VIRA_DIR_01
+		
+ZOOMER_VIRA_UP_11:
+		bne t2,t4,ZOOMER_VIRA_DIR_01
+		li t1,2 # 2 vai ser o equivalente a indo pra cima
+		sw t1,8(t0)
+		j WALK_ZOOMER
+		
+		
+		
+		
+		
+ZOOMER_VIRA_DIR_01:
+		li t3,672
+		li t4,32
+		bne t1,t3,ZOOMER_VIRA_DOWN0
+		
+ZOOMER_VIRA_DIR_11:
+		bne t2,t4,ZOOMER_VIRA_DOWN0
+		li t1,3 # 3 vai ser o equivalente a indo pra direita
+		sw t1,8(t0)
+		j WALK_ZOOMER
+
+
+
+
+ZOOMER_VIRA_DOWN0:
+		li t3,704
+		li t4,32
+		bne t1,t3,WALK_ZOOMER
+		
+ZOOMER_VIRA_DOWN1:
+		bne t2,t4,WALK_ZOOMER
+		li t1,0 # 0 vai ser o equivalente a indo pra baixo
+		sw t1,8(t0)
+		
+WALK_ZOOMER: #### aqui move o Zoomer 2 pixeis pra direção que ele deve ir
+		lw t1,8(t0) # numero que indica a direção a ser seguida
+		
+		li t2,0
+		beq t1,t2,ZOOMER_DOWN
+		
+		li t2,1
+		beq t1,t2,ZOOMER_ESQ
+		
+		li t2,2
+		beq t1,t2,ZOOMER_UP
+		
+		li t2,3
+		beq t1,t2,ZOOMER_DIR
+		
+ZOOMER_DOWN: # move para baixo
+		lw t1,4(t0)
+		addi t1,t1,2
+		sw t1,4(t0)
+		
+		ret
+		
+ZOOMER_ESQ: # move para baixo
+		lw t1,0(t0)
+		addi t1,t1,-2
+		sw t1,0(t0)
+		
+		ret
+
+ZOOMER_UP: # move para baixo
+		lw t1,4(t0)
+		addi t1,t1,-2
+		sw t1,4(t0)
+		
+		ret
+		
+ZOOMER_DIR: # move para baixo
+		lw t1,0(t0)
+		addi t1,t1,2
+		sw t1,0(t0)
+		
+		ret
+		
+START_SHOT: # inicia um tiro
+		la t0,SHOT_BEAMS
+		lw t1,8(t0)
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 	
+		
