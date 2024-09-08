@@ -12,6 +12,8 @@
 .include "mapsitens/number7.s"
 .include "mapsitens/number8.s"
 .include "mapsitens/number9.s"
+.include "mapsitens/beam.s"
+.include "mapsitens/icebeam.s"
 
 .include "samus/Samusr0.s"
 .include "samus/Samusl0.s"
@@ -50,7 +52,7 @@ DELAY: .half 0
 DELAY_WALK: .half 0
 LIFE_SAMUS: .word 56
 ZOOMER_POS: .word 704,48,0,0,2,0 # x,y,direção que está indo, frame atual (0 ou 1), vida, se está congelado
-SHOT_BEAMS: .word 0,0,0,0,0,0,0,0,0 # posição x,y,ativo ou não. Isso para cada um dos 3 tiros
+SHOT_BEAMS: .word 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 # posição x,y,ativo (1) ou não(0), tipo normal(0) de gelo(1), direção 0 esq/1 dir. Isso para cada um dos 3 tiros
 
 .text
 SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -278,9 +280,9 @@ PRINT_ZOOMER1:	la t0,ZOOMER_POS # carrega a posição do pesonagem em t0
 		lw a1,0(t0) # posição horizontal
 		la t1,MAP_POS
 		lw t1,0(t1)
-		blt a1,t1,PRINT_LIFE
+		blt a1,t1,SKIP_ZOOMER
 		addi t1,t1,304
-		blt t1,a1,PRINT_LIFE
+		blt t1,a1,SKIP_ZOOMER
 		#### LIDA COM TODA A PARTE DE MOVIMENTAR E PRINTAR O ZOOMER, APENAS SE ELE ESTIVER NA TELA
 		
 		la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
@@ -293,12 +295,46 @@ PRINT_ZOOMER1:	la t0,ZOOMER_POS # carrega a posição do pesonagem em t0
 		call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
 		
 SKIP_ZOOMER:
-		li t6,2
+		li a6,3
+		la a5,SHOT_BEAMS
+		
 PRINT_SHOTS:	
+		lw t1,8(a5)
+		beqz t1,FIM_PRINT_SHOT
+		lw t1,12(a5)
+		bnez t1,PRINT_NORMAL_ICE_SHOT
 		
-		addi,t6,t6,-1
+PRINT_NORMAL_SHOT: ### DESENHA o tiro normal
+		la a0,beam # recebe a imagem do tiro base
+		lw a1,0(a5) # posição horizontal
 		
-		beqz t6,PRINT_LIFE
+		la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
+		lw a4,0(t1)
+		
+		sub a1,a1,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
+		
+		lw a2,4(a5) # posição vertical
+		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+		call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+		
+		j FIM_PRINT_SHOT
+
+PRINT_NORMAL_ICE_SHOT: ### DESENHA o tiro de gelo
+		la a0,icebeam # recebe a imagem do tiro base
+		lw a1,0(a5) # posição horizontal
+		
+		la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
+		lw a4,0(t1)
+		
+		sub a1,a1,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
+		
+		lw a2,4(a5) # posição vertical
+		mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+		call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+		
+FIM_PRINT_SHOT:	addi a5,a5,20
+		addi,a6,a6,-1
+		beqz a6,PRINT_LIFE
 		
 		j PRINT_SHOTS
 		
@@ -466,8 +502,8 @@ KEY2:	#### EXEMPLO LAMAR: VERIFICA SE O BOTÃO FOI PRESSIONADO
 		li t0,'w' # coloca o valor da tecla
 		beq t2,t0,START_JUMP # verifica se o usuario pressionou o 'w'
 		
-		#li t0,'e' # coloca o valor da tecla
-		#beq t2,t0,START_SHOT # verifica se o usuario pressionou o 'e'
+		li t0,'e' # coloca o valor da tecla
+		beq t2,t0,START_SHOT # verifica se o usuario pressionou o 'e'
 		
 		#la a0,FRAME_SAMUS # verifica se a samus está no chão
 		#lh a1,0(a0)
@@ -1022,14 +1058,60 @@ ZOOMER_DIR: # move para baixo
 		ret
 		
 START_SHOT: # inicia um tiro
+		la a0,FRAME_SAMUS # se a Samus estiver no chão coloca os frames de animação
+		sh zero,0(a0)
+		
 		la t0,SHOT_BEAMS
 		lw t1,8(t0)
+		la t2,CHAR_POS
+		lw t3,0(t2)
+		lw t4,4(t2)
+		bnez t1,SHOT_2 # quando o primeiro tiro já estiver ativo, pula para outro.
 		
+		j SHOT_LADO
 		
+SHOT_2:		addi t0,t0,20
+		lw t1,8(t0)
+		bnez t1,SHOT_3
 		
+		j SHOT_LADO
 		
+SHOT_3:		addi t0,t0,20
+		lw t1,8(t0)
+		beqz t1,SHOT_LADO
 		
+		ret
+SHOT_LADO:	
+		la t5,LAST_DIREC
+		lw t5,0(t5)
+		li t1,'a' # coloca o valor da tecla
+		beq t5,t1,SHOT_ESQ # verifica se a ultima tecla pressionada pelo usuario é 'a'
 		
+		li t1,'d' # coloca o valor da tecla
+		beq t5,t1,SHOT_DIR # verifica se o usuario pressionou o 'd'
+		
+SHOT_ESQ:	
+		addi t3,t3,-5
+		addi t4,t4,6
+		sw t3,0(t0)
+		sw t4,4(t0)
+		li t1,1
+		sw t1,8(t0)
+		sw zero,12(t0)
+		sw zero,16(t0)
+		
+		ret
+SHOT_DIR:	
+		addi t3,t3,20
+		addi t4,t4,6
+		sw t3,0(t0)
+		sw t4,4(t0)
+		li t1,1
+		sw t1,8(t0)
+		sw zero,12(t0)
+		sw t1,16(t0)
+		
+		ret
 		
 		
 		
