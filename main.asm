@@ -16,6 +16,13 @@
 .include "mapsitens/icebeam.s"
 .include "mapsitens/pickicebeam.s"
 .include "mapsitens/pickrocket.s"
+.include "mapsitens/door1.s"
+.include "mapsitens/door1dir.s"
+.include "mapsitens/door2.s"
+.include "mapsitens/door12.s"
+.include "mapsitens/door12dir.s"
+.include "mapsitens/door21.s"
+.include "mapsitens/doorn.s"
 
 .include "samus/Samusr0.s"
 .include "samus/Samusl0.s"
@@ -101,6 +108,7 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 		li a2,301
 		bne a1,a2,N_RESET_DELAY
 		li a1,0
+		
 	N_RESET_DELAY:
 		sh a1,0(a0)
 		
@@ -121,6 +129,24 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 			li a2,0 # ALTURA DA IMAGEM
 			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
 			call PRINT_MAPA
+			
+	PRINT_DOOR:
+			la a0,door1dir # COMEÇAMOS A DESENHAR O ITEM
+			li a1,1256 # posição horizontal
+			la t1,MAP_POS
+			lw t1,0(t1)
+			li t2,944
+			ble t1,t2,PRINT_ICEBEAM_PICK
+			#### LIDA COM TODA A PARTE DE MOVIMENTAR E PRINTAR O ZOOMER, APENAS SE ELE ESTIVER NA TELA
+			
+			la t1,MAP_POS # carrega a posição do mapa para saber onde o item esta nele
+			lw a4,0(t1)
+			
+			sub a1,a1,a4 # realiza a subtração da posição do item no mapa pela tela do mapa
+			
+			li a2,80 # posição vertical
+			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+			call PRINT # CHAMA A FUNÇÃO QUE PRINTA O ITEM
 			
 	PRINT_ICEBEAM_PICK:
 			la t0,ITENS # VAMOS VERIFICAR SE O ITEM JÁ FOI PEGO
