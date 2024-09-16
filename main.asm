@@ -26,6 +26,9 @@
 .include "mapsitens/door12dir.s"
 .include "mapsitens/door21.s"
 .include "mapsitens/doorn.s"
+.include "mapsitens/missilefire.s"
+.include "mapsitens/missilefire1.s"
+.include "mapsitens/missilstats.s"
 
 
 .include "samus/Samusr0.s"
@@ -68,6 +71,8 @@ ZOOMER_POS: .word 704,48,0,0,4,0 # x,y,direção que está indo, frame atual (0 
 SHOT_BEAMS: .word 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 # posição x,y,ativo (1 até 10) ou não(0), tipo normal(0) de gelo(1), direção 0 esq/1 dir. Isso para cada um dos 3 tiros
 ITENS: .half 0,0
 DOORS: .half 6,6,6,6
+RIPPER_POS: .word 123,71,1,4,0 # x,y,direção que está indo, vida, se está congelado
+SHOT_ROCKETS: .word 0,0,0,0,0,0,0,0,0,0,0,0 # posição x,y,ativo (1 até 10) ou não(0), direção 0 esq/1 dir. Isso para cada um dos 3 tiros
 
 
 .text
@@ -1450,6 +1455,7 @@ START_ICE_SHOT: # inicia um tiro
 			sw t1,16(t0)
 			
 			ret
+
 ### UNIVERSAL		
 SHOT_ANIMA: # faz os tiros andarem até uma certa distancia e depois sumirem
 		la a0,SHOT_BEAMS
@@ -1675,7 +1681,62 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 				
 				mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
 				call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+			
+		la t0,DELAY
+		lh t0,0(t0)
+		li t1,40
+		rem t1,t0,t1
+		bnez t1,PRINT_RIPPER
+		la t0,RIPPER_POS
+		lw t1,16(t0)
+		bnez t1,RIPPER_CONGELADO
+		call MOVE_RIPPER
+		j PRINT_RIPPER
+			
+		RIPPER_CONGELADO:
+				addi t1,t1,1
+				li t2,100
+				beq t1,t2,RIPPER_DESCONGELA
 				
+				sw t1,16(t0)
+				j PRINT_RIPPER
+				
+		RIPPER_DESCONGELA:
+				sw zero,16(t0)
+				
+		PRINT_RIPPER:	la t0,RIPPER_POS
+				lw t1,12(t0)
+				beqz t1,SKIP_RIPPER
+				lw t1,8(t0)
+				li t2,1
+				beq t1,t2,RIPPER_FRAME_DIR
+				li t2,2
+				beq t1,t2,RIPPER_FRAME_ESQ
+		
+		RIPPER_FRAME_DIR:
+				la a0,ripperdir
+				j PRINT_RIPPER1
+				
+		RIPPER_FRAME_ESQ:
+				la a0,ripperesq
+				
+		PRINT_RIPPER1:	la t0,RIPPER_POS # carrega a posição do pesonagem em t0
+				lw a1,0(t0) # posição horizontal
+				addi a1,a1,32
+				lw a2,4(t0) # posição vertical
+				la t1,MAP_POS
+				lw t1,4(t1)
+				blt a2,t1,SKIP_RIPPER
+				#### LIDA COM TODA A PARTE DE MOVIMENTAR E PRINTAR O ZOOMER, APENAS SE ELE ESTIVER NA TELA
+				
+				la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
+				lw a4,4(t1)
+				sub a2,a2,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
+				
+				mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+				call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+			
+	SKIP_RIPPER:	
 			li a6,3
 			la a5,SHOT_BEAMS
 			
@@ -1726,8 +1787,55 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 			lh a1,0(a0)
 			li a0,20
 			rem a1,a1,a0
-			bnez a1,PRINT_LIFE_M2
+			bnez a1,INIT_PRINT_ROCKETS
 			call SHOT_ANIMA #### ANTES DISSO, ANDA COM AS BALAS
+			
+	
+	
+	INIT_PRINT_ROCKETS:		
+			li a6,3
+			la a5,SHOT_ROCKETS
+			
+		PRINT_SHOTS_ROCKETS_M2:	
+				lw t1,8(a5)
+				beqz t1,FIM_PRINT_SHOT_ROCKETS_M2
+				lw t1,12(a5)
+				bnez t1,PRINT_SHOTS_ROCKETS_DIR_M2
+				
+		### DESENHA o missil
+		PRINT_SHOTS_ROCKETS_ESQ_M2:
+				la a0,missilefire # recebe a imagem do tiro base
+				j PRINT_ROCKET
+				
+		PRINT_SHOTS_ROCKETS_DIR_M2:
+				la a0,missilefire1 # recebe a imagem do tiro base
+				
+		PRINT_ROCKET:	lw a1,0(a5) # posição horizontal
+				addi a1,a1,32
+				
+				la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
+				lw a4,4(t1)
+				lw a2,4(a5) # posição vertical
+				sub a2,a2,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
+				
+				mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+				call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+				
+		FIM_PRINT_SHOT_ROCKETS_M2:
+				addi a5,a5,16
+				addi a6,a6,-1
+				beqz a6,ANIMAR_SHOTS_ROCKETS_M2
+				
+				j PRINT_SHOTS_ROCKETS_M2
+			
+			
+	ANIMAR_SHOTS_ROCKETS_M2:
+			la a0,DELAY
+			lh a1,0(a0)
+			li a0,20
+			rem a1,a1,a0
+			bnez a1,PRINT_LIFE_M2
+			call SHOT_ROCKET_ANIMA #### ANTES DISSO, ANDA COM AS BALAS
 			
 	PRINT_LIFE_M2:	########## IMPRIMIR STATUS NA TELA, VIDA E ETC
 			la a0,statusfull #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -1871,6 +1979,141 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
 			call PRINT
 			
+	PRINT_ROCKET_STATS:
+			
+	
+	DANO_SHOTS_M2:	li t4,3
+			la t5,SHOT_BEAMS
+	HIT_SHOTS_M2:	
+			lw t1,8(t5) # se o tiro não estiver ativo, pula para o proximo
+			beqz t1,FIM_HIT_SHOTS_M2
+			
+			lw a0,0(t5)
+			lw a1,4(t5)
+			li a2,8
+			li a3,8
+			
+			la t1,RIPPER_POS
+			lw t0,12(t1)
+			beqz t0,HIT_DOOR_M2 # se o ZOOMER JA ESTIVER MORTO, PULA
+			
+			lw t0,0(t1)
+			lw t1,4(t1)
+			li t2,16
+			li t3,8
+			call VERIFICA_HIT_BOX
+			
+			beqz a6,HIT_DOOR_M2
+			
+			lw a0,12(t5)
+			bnez a0,HIT_ICE_BEAM_M2
+			
+	HIT_NORMAL_BEAM_M2:
+			sw zero,8(t5)
+			la t1,RIPPER_POS
+			lw t0,12(t1)
+			addi t0,t0,-1
+			sw t0,12(t1)
+			
+			j HIT_DOOR_M2
+			
+	HIT_ICE_BEAM_M2:
+			sw zero,8(t5)
+			la t1,RIPPER_POS
+			lw t0,12(t1)
+			addi t0,t0,-2
+			sw t0,12(t1)
+			li t0,1 # deixa congelado
+			sw t0,16(t1)
+			
+	HIT_DOOR_M2:	
+			la t0,DOORS
+			lh t0,4(t0) # VERIFICAR SE AINDA TEM PORTA
+			li t1,2
+			blt t0,t1,FIM_HIT_SHOTS_M2 # SE NAO TIVER, PULA
+			
+			lw a0,0(t5)
+			lw a1,4(t5)
+			li a2,8
+			li a3,8
+			
+			li t0,232
+			li t1,81
+			li t2,8
+			li t3,48
+			call VERIFICA_HIT_BOX
+			
+			beqz a6,FIM_HIT_SHOTS_M2
+			
+			sw zero,8(t5) # desativa tiro
+			
+	FIM_HIT_SHOTS_M2:	
+			addi t5,t5,20
+			addi t4,t4,-1
+			beqz t4,PICK_ITEM_2
+			
+			j HIT_SHOTS_M2
+			
+	PICK_ITEM_2: # verifica se a samus pegou o item
+			la t0,MAP_POS # se o item não está na tela, pula
+			lw t0,0(t0)
+			li t1,208
+			bgt t0,t1,DANO_SAMUS_RIPPER
+			la t0,ITENS # se o item ja foi pego, pula
+			lh t0,2(t0)
+			bnez t0,DANO_SAMUS_RIPPER
+			
+			la a1,CHAR_POS
+			lw a0,0(a1)
+			lw a1,4(a1)
+			li a2,24
+			li a3,32
+			
+			li t0,127
+			li t1,208
+			li t2,16
+			li t3,16
+			call VERIFICA_HIT_BOX
+			
+			beqz a6,DANO_SAMUS_RIPPER
+			
+			la t0,ITENS
+			addi t1,zero,1
+			sh t1,2(t0)
+			
+			
+	DANO_SAMUS_RIPPER: # verifica se a samus está encostada no zoomer
+			la a0,DELAY
+			lh a1,0(a0)
+			li a0,100
+			rem a1,a1,a0
+			bnez a1,END_LOOP_1_M2
+			
+			la a1,CHAR_POS
+			lw a0,0(a1)
+			lw a1,4(a1)
+			li a2,24
+			li a3,32
+			
+			la t1,RIPPER_POS
+			lw t0,16(t1)
+			beqz t0,END_LOOP_1_M2 # se o RIPPER JA ESTIVER MORTO, PULA
+			
+			lw t0,0(t1)
+			lw t1,4(t1)
+			li t2,16
+			li t3,8
+			call VERIFICA_HIT_BOX
+			
+			beqz a6,END_LOOP_1_M2
+			
+			# se a colisão foi detectada, a samus perde vida
+			la a0,LIFE_SAMUS
+			lw a1,0(a0)
+			addi a1,a1,-5
+			sw a1,0(a0)
+	
+			
 	END_LOOP_1_M2:	### AQUI O FRAME É ALTERADO
 			li t0,0xFF200604 # valor para alternar os frames
 			sw s0,0(t0) # colocar o valor para alternar o frame em s0 que é a variavel dos frames
@@ -1900,6 +2143,8 @@ KEY2_M2:	#### EXEMPLO LAMAR: VERIFICA SE O BOTÃO FOI PRESSIONADO
 		li t0,'f' # coloca o valor da tecla
 		beq t2,t0,START_ICE_SHOT # verifica se o usuario pressionou o 'f'
 		
+		li t0,'r' # coloca o valor da tecla
+		beq t2,t0,START_ROCKET_SHOT # verifica se o usuario pressionou o 'f'
 		#la a0,FRAME_SAMUS # verifica se a samus está no chão
 		#lh a1,0(a0)
 		#li a2,4
@@ -2209,6 +2454,7 @@ WALK_INIT_ANIME_M2:
 		sh a1,0(a0)
 		
 		ret
+
 ### MAPA 2
 CHAR_UP_M2: #### MOVIMENTA A SAMUS PARA cima
 		la t0,MAP_POS
@@ -2281,12 +2527,137 @@ GRAVID_DOWN_M2:	#### funçao para descer
 		
 		ret
 
+MOVE_RIPPER: # Toda a movimentação do ripper 1
+		la a0,RIPPER_POS
+		lw a1,8(a0) # ver se está indo para direita ou esquerda
+		li a2,1
+		beq a1,a2,MOVE_RIPPER_DIR
+		li a2,2
+		beq a1,a2,MOVE_RIPPER_ESQ
 		
+	MOVE_RIPPER_DIR:
+			lw t0,0(a0)
+			addi t0,t0,2
+			sw t0,0(a0)
+			li t1,208
+			blt t0,t1,MOVE_RIPPER_RET
+			
+			li t0,2
+			sw t0,8(a0)
+			j MOVE_RIPPER_RET
 		
+	MOVE_RIPPER_ESQ:
+			lw t0,0(a0)
+			addi t0,t0,-2
+			sw t0,0(a0)
+			li t1,32
+			bgt t0,t1,MOVE_RIPPER_RET
+			
+			li t0,1
+			sw t0,8(a0)
 		
+	MOVE_RIPPER_RET:
+			ret
 		
+### UNIVERSAL
+START_ROCKET_SHOT: # inicia um tiro
+		la a0,ITENS
+		lh a0,2(a0)
+		bnez a0,ROCKET_PICKED
 		
+		ret # se o missil ainda não foi pego, não faz nada e retorna
 		
+	ROCKET_PICKED:
+			la a0,FRAME_SAMUS # se a Samus estiver no chão coloca os frames de animação
+			sh zero,0(a0)
+			
+			la t0,SHOT_ROCKETS
+			lw t1,8(t0)
+			la t2,CHAR_POS
+			lw t3,0(t2)
+			lw t4,4(t2)
+			bnez t1,SHOT_ROCKET_2 # quando o primeiro tiro já estiver ativo, pula para outro.
+			
+			j SHOT_ROCKET_LADO
 		
-	
+	SHOT_ROCKET_2:	
+			addi t0,t0,16
+			lw t1,8(t0)
+			bnez t1,SHOT_ROCKET_3
+			
+			j SHOT_ROCKET_LADO
+			
+	SHOT_ROCKET_3:	
+			addi t0,t0,16
+			lw t1,8(t0)
+			beqz t1,SHOT_ROCKET_LADO
+			
+			ret
+	SHOT_ROCKET_LADO:	
+			la t5,LAST_DIREC
+			lw t5,0(t5)
+			li t1,'a' # coloca o valor da tecla
+			beq t5,t1,SHOT_ROCKET_ESQ # verifica se a ultima tecla pressionada pelo usuario é 'a'
+			
+			li t1,'d' # coloca o valor da tecla
+			beq t5,t1,SHOT_ROCKET_DIR # verifica se o usuario pressionou o 'd'
+			
+	SHOT_ROCKET_ESQ:	
+			addi t3,t3,-13
+			addi t4,t4,6
+			sw t3,0(t0)
+			sw t4,4(t0)
+			li t1,1
+			sw t1,8(t0)
+			sw zero,12(t0)
+			
+			ret
+	SHOT_ROCKET_DIR:	
+			addi t3,t3,20
+			addi t4,t4,6
+			sw t3,0(t0)
+			sw t4,4(t0)
+			li t1,1
+			sw t1,8(t0)
+			sw t1,12(t0)
+			
+			ret
+			
+### UNIVERSAL		
+SHOT_ROCKET_ANIMA: # faz os tiros andarem até uma certa distancia e depois sumirem
+		la a0,SHOT_ROCKETS
+		li a1,3
+			
+	LOOP_SHOT_ROCKET:	
+			lw t0,8(a0) # pega o valor para conferir se o tiro está ativo
+			beqz t0,FIM_LOOP_SHOT_ROCKET # se não estive pula ele
+			addi t0,t0,1 # se estiver adiciona um na atividade dele (indo até o limite que eu estabelecer daqui a pouco)
+			sw t0,8(a0) # salva o valor de atividade
+			lw t0,12(a0) #pega a direção que o tiro está indo
+			bnez t0,SHOT_ROCKET_ANIMA_DIR
+			
+	SHOT_ROCKET_ANIMA_ESQ: # se o tiro estiver para a esquerda o x da posiçao dele diminui
+			lw t0,0(a0)
+			addi t0,t0,-3
+			sw t0,0(a0)
+			
+			j FIM_LOOP_SHOT_ROCKET
+			
+	SHOT_ROCKET_ANIMA_DIR: # se o tiro estiver para a direita o x da posiçao dele aumenta
+			lw t0,0(a0)
+			addi t0,t0,3
+			sw t0,0(a0)
+			
+	FIM_LOOP_SHOT_ROCKET: # verifica se o tiro ja andou até o final, se andou desativa, vai para o proximo tiro, diminui um do contador de tiros e se tiver mais vai pro proximo
+			lw t0,8(a0)
+			li t1,21
+			bne t0,t1,ENABLE_SHOT_ROCKET
+			sw zero,8(a0)
+			
+	ENABLE_SHOT_ROCKET:
+			addi a0,a0,16
+			addi a1,a1,-1
+			bnez a1,LOOP_SHOT_ROCKET
+			
+			ret
 		
