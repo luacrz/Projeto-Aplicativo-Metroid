@@ -73,6 +73,8 @@ ITENS: .half 0,0
 DOORS: .half 6,6,6,6
 RIPPER_POS: .word 123,71,1,4,0 # x,y,direção que está indo, vida, se está congelado
 SHOT_ROCKETS: .word 0,0,0,0,0,0,0,0,0,0,0,0 # posição x,y,ativo (1 até 10) ou não(0), direção 0 esq/1 dir. Isso para cada um dos 3 tiros
+RIDLEY_POS: .word 538,168,30,0,0 # x,y, vida, delay pulo, delay tiro
+RIDLEY_HIT: .word 0,0,0,0,0,0,0,0,0,0 # posição x,y,ativo (1 até 30) ou não(0), O ULTIMO É APENAS PARA MOSTRAR O FRAME DE CADA TIRO. Isso para cada um dos 3 tiros
 
 
 .text
@@ -308,7 +310,7 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 			
 	PRINT_ZOOMER:	la t0,ZOOMER_POS
 			lw t1,16(t0)
-			beqz t1,SKIP_ZOOMER
+			blez t1,SKIP_ZOOMER
 			lw t1,8(t0)
 			li t2,0
 			beq t1,t2,ZOOMER_FRAME_DIR0
@@ -602,7 +604,7 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 			
 			la t1,ZOOMER_POS
 			lw t0,16(t1)
-			beqz t0,HIT_DOOR # se o ZOOMER JA ESTIVER MORTO, PULA
+			blez t0,HIT_DOOR # se o ZOOMER JA ESTIVER MORTO, PULA
 			
 			lw t0,0(t1)
 			lw t1,4(t1)
@@ -708,7 +710,7 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 			
 			la t1,ZOOMER_POS
 			lw t0,16(t1)
-			beqz t0,SAIDA_1 # se o ZOOMER JA ESTIVER MORTO, PULA
+			blez t0,SAIDA_1 # se o ZOOMER JA ESTIVER MORTO, PULA
 			
 			lw t0,0(t1)
 			lw t1,4(t1)
@@ -1574,6 +1576,38 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
 			call PRINT_MAPA_M2
 			
+	PRINT_DOOR_M22:	
+			la a0,DOORS
+			lh t0,4(a0) #verificar vida da porta
+			li a1,1
+			beq t0,a1,PRINT_DOOR2_M22
+			blez t0,PRINT_DOOR3_M22
+			
+	PRINT_DOOR1_M22: # porta inteira
+			la a0,door2 # COMEÇAMOS A DESENHAR O ITEM
+			j PRINT_DOORP_M22
+	
+	PRINT_DOOR2_M22: # porta danificada
+			sh zero,4(a0)
+			la a0,door21 # COMEÇAMOS A DESENHAR O ITEM
+			j PRINT_DOORP_M22
+	
+	PRINT_DOOR3_M22: # sem porta
+			la a0,doorn # COMEÇAMOS A DESENHAR O ITEM
+			
+ 	PRINT_DOORP_M22:
+			li a1,264 # posição horizontal
+			li a2,80 # posição vertical
+			
+			la t1,MAP_POS
+			lw a4,4(t1)
+			bgt a4,a2,PRINT_ROCKET_PICK_M2
+			
+			sub a2,a2,a4 # realiza a subtração da posição do item no mapa pela tela do mapa
+			
+			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+			call PRINT # CHAMA A FUNÇÃO QUE PRINTA O ITEM
+			
 	PRINT_ROCKET_PICK_M2:
 			la t0,ITENS # VAMOS VERIFICAR SE O ITEM JÁ FOI PEGO
 			lh t0,2(t0)
@@ -1706,7 +1740,7 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 				
 		PRINT_RIPPER:	la t0,RIPPER_POS
 				lw t1,12(t0)
-				beqz t1,SKIP_RIPPER
+				blez t1,SKIP_RIPPER
 				lw t1,8(t0)
 				li t2,1
 				beq t1,t2,RIPPER_FRAME_DIR
@@ -1840,7 +1874,7 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 	PRINT_LIFE_M2:	########## IMPRIMIR STATUS NA TELA, VIDA E ETC
 			la a0,statusfull #INICIA O REGISTRADOR COM A IMAGEM DO MENU
 			li a1,64 # LARGURA DA IMAGEM
-			li a2,32# ALTURA DA IMAGEM
+			li a2,32 # ALTURA DA IMAGEM
 			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
 			call PRINT
 			
@@ -1980,79 +2014,153 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 			call PRINT
 			
 	PRINT_ROCKET_STATS:
+			la a0,ITENS
+			lh a1,2(a0)
+			beqz a1,DANO_SHOTS_M2
 			
+			la a0,missilstats #INICIA O REGISTRADOR COM A IMAGEM DO MENU
+			li a1,64 # LARGURA DA IMAGEM
+			li a2,42 # ALTURA DA IMAGEM
+			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+			call PRINT
 	
-	DANO_SHOTS_M2:	li t4,3
+	DANO_SHOTS_M2:
+			li t4,3
 			la t5,SHOT_BEAMS
-	HIT_SHOTS_M2:	
-			lw t1,8(t5) # se o tiro não estiver ativo, pula para o proximo
-			beqz t1,FIM_HIT_SHOTS_M2
 			
-			lw a0,0(t5)
-			lw a1,4(t5)
-			li a2,8
-			li a3,8
+		HIT_SHOTS_M2:	
+				lw t1,8(t5) # se o tiro não estiver ativo, pula para o proximo
+				beqz t1,FIM_HIT_SHOTS_M2
+				
+				lw a0,0(t5)
+				lw a1,4(t5)
+				li a2,8
+				li a3,8
+				
+				la t1,RIPPER_POS
+				lw t0,12(t1)
+				blez t0,HIT_DOOR_M2 # se o ZOOMER JA ESTIVER MORTO, PULA
+				
+				lw t0,0(t1)
+				lw t1,4(t1)
+				li t2,16
+				li t3,8
+				call VERIFICA_HIT_BOX
+				
+				beqz a6,HIT_DOOR_M2
+				
+				lw a0,12(t5)
+				bnez a0,HIT_ICE_BEAM_M2
+				
+		HIT_NORMAL_BEAM_M2:
+				sw zero,8(t5)
+				la t1,RIPPER_POS
+				lw t0,12(t1)
+				addi t0,t0,-1
+				sw t0,12(t1)
+				
+				j HIT_DOOR_M2
+				
+		HIT_ICE_BEAM_M2:
+				sw zero,8(t5)
+				la t1,RIPPER_POS
+				lw t0,12(t1)
+				addi t0,t0,-2
+				sw t0,12(t1)
+				li t0,1 # deixa congelado
+				sw t0,16(t1)
+				
+		HIT_DOOR_M2:	
+				la t0,DOORS
+				lh t0,4(t0) # VERIFICAR SE AINDA TEM PORTA
+				li t1,2
+				blt t0,t1,FIM_HIT_SHOTS_M2 # SE NAO TIVER, PULA
+				
+				lw a0,0(t5)
+				lw a1,4(t5)
+				li a2,8
+				li a3,8
+				
+				li t0,232
+				li t1,80
+				li t2,8
+				li t3,48
+				call VERIFICA_HIT_BOX
+				
+				beqz a6,FIM_HIT_SHOTS_M2
+				
+				sw zero,8(t5) # desativa tiro
+				
+		FIM_HIT_SHOTS_M2:	
+				addi t5,t5,20
+				addi t4,t4,-1
+				beqz t4,DANO_SHOTS_ROCKET_M2
+				
+				j HIT_SHOTS_M2
+	
+	DANO_SHOTS_ROCKET_M2:
+			li t4,3
+			la t5,SHOT_ROCKETS
 			
-			la t1,RIPPER_POS
-			lw t0,12(t1)
-			beqz t0,HIT_DOOR_M2 # se o ZOOMER JA ESTIVER MORTO, PULA
-			
-			lw t0,0(t1)
-			lw t1,4(t1)
-			li t2,16
-			li t3,8
-			call VERIFICA_HIT_BOX
-			
-			beqz a6,HIT_DOOR_M2
-			
-			lw a0,12(t5)
-			bnez a0,HIT_ICE_BEAM_M2
-			
-	HIT_NORMAL_BEAM_M2:
-			sw zero,8(t5)
-			la t1,RIPPER_POS
-			lw t0,12(t1)
-			addi t0,t0,-1
-			sw t0,12(t1)
-			
-			j HIT_DOOR_M2
-			
-	HIT_ICE_BEAM_M2:
-			sw zero,8(t5)
-			la t1,RIPPER_POS
-			lw t0,12(t1)
-			addi t0,t0,-2
-			sw t0,12(t1)
-			li t0,1 # deixa congelado
-			sw t0,16(t1)
-			
-	HIT_DOOR_M2:	
-			la t0,DOORS
-			lh t0,4(t0) # VERIFICAR SE AINDA TEM PORTA
-			li t1,2
-			blt t0,t1,FIM_HIT_SHOTS_M2 # SE NAO TIVER, PULA
-			
-			lw a0,0(t5)
-			lw a1,4(t5)
-			li a2,8
-			li a3,8
-			
-			li t0,232
-			li t1,81
-			li t2,8
-			li t3,48
-			call VERIFICA_HIT_BOX
-			
-			beqz a6,FIM_HIT_SHOTS_M2
-			
-			sw zero,8(t5) # desativa tiro
-			
-	FIM_HIT_SHOTS_M2:	
-			addi t5,t5,20
-			addi t4,t4,-1
-			beqz t4,PICK_ITEM_2
-			
-			j HIT_SHOTS_M2
+		HIT_SHOTS_ROCKET_M2:	
+				lw t1,8(t5) # se o tiro não estiver ativo, pula para o proximo
+				beqz t1,FIM_HIT_SHOTS_ROCKET_M2
+				
+				lw a0,0(t5)
+				lw a1,4(t5)
+				li a2,16
+				li a3,8
+				
+				la t1,RIPPER_POS
+				lw t0,12(t1)
+				blez t0,HIT_DOOR_ROCKET_M2 # se o RIPPER JA ESTIVER MORTO, PULA
+				
+				lw t0,0(t1)
+				lw t1,4(t1)
+				li t2,16
+				li t3,8
+				call VERIFICA_HIT_BOX
+				
+				beqz a6,HIT_DOOR_ROCKET_M2
+				
+				sw zero,8(t5)
+				la t1,RIPPER_POS
+				lw t0,12(t1)
+				addi t0,t0,-4
+				sw t0,12(t1)
+				
+		HIT_DOOR_ROCKET_M2:	
+				la t0,DOORS
+				lh t0,4(t0) # VERIFICAR SE AINDA TEM PORTA
+				li t1,2
+				blt t0,t1,FIM_HIT_SHOTS_ROCKET_M2 # SE NAO TIVER, PULA
+				
+				lw a0,0(t5)
+				lw a1,4(t5)
+				li a2,8
+				li a3,8
+				
+				li t0,232
+				li t1,80
+				li t2,8
+				li t3,48
+				call VERIFICA_HIT_BOX
+				
+				beqz a6,FIM_HIT_SHOTS_ROCKET_M2
+				
+				sw zero,8(t5) # desativa tiro
+				
+				la t0,DOORS
+				lh t1,4(t0)
+				addi t1,t1,-1
+				sh t1,4(t0)
+				
+		FIM_HIT_SHOTS_ROCKET_M2:	
+				addi t5,t5,16
+				addi t4,t4,-1
+				beqz t4,PICK_ITEM_2
+				
+				j HIT_SHOTS_ROCKET_M2
 			
 	PICK_ITEM_2: # verifica se a samus pegou o item
 			la t0,MAP_POS # se o item não está na tela, pula
@@ -2087,7 +2195,7 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 			lh a1,0(a0)
 			li a0,100
 			rem a1,a1,a0
-			bnez a1,END_LOOP_1_M2
+			bnez a1,SAIDA_3
 			
 			la a1,CHAR_POS
 			lw a0,0(a1)
@@ -2096,8 +2204,8 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 			li a3,32
 			
 			la t1,RIPPER_POS
-			lw t0,16(t1)
-			beqz t0,END_LOOP_1_M2 # se o RIPPER JA ESTIVER MORTO, PULA
+			lw t0,12(t1)
+			blez t0,SAIDA_3 # se o RIPPER JA ESTIVER MORTO, PULA
 			
 			lw t0,0(t1)
 			lw t1,4(t1)
@@ -2105,14 +2213,34 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 			li t3,8
 			call VERIFICA_HIT_BOX
 			
-			beqz a6,END_LOOP_1_M2
+			beqz a6,SAIDA_3
 			
 			# se a colisão foi detectada, a samus perde vida
 			la a0,LIFE_SAMUS
 			lw a1,0(a0)
 			addi a1,a1,-5
 			sw a1,0(a0)
-	
+			
+	SAIDA_3:	
+			la t0,DOORS
+			lh t0,4(t0) # VERIFICAR SE A PORTA JA ESTA ABERTA
+			bnez t0,END_LOOP_1_M2 # SE NAO TIVER, PULA
+			
+			la t0,CHAR_POS
+			lw a0,0(t0)
+			lw a1,4(t0)
+			li a2,24
+			li a3,32
+			
+			li t0,1256
+			li t1,80
+			li t2,8
+			li t3,48
+			call VERIFICA_HIT_BOX
+			
+			beqz a6,END_LOOP_1_M2
+			
+			j TRANSICAO_MAP3
 			
 	END_LOOP_1_M2:	### AQUI O FRAME É ALTERADO
 			li t0,0xFF200604 # valor para alternar os frames
@@ -2448,7 +2576,7 @@ CHAR_DIR_M2: #### MOVIMENTA A SAMUS PARA A direita
 			
 	CHAR_DIR_RET_M2:	
 			ret
-
+### MAPA 2
 WALK_INIT_ANIME_M2:
 		li a1,1
 		sh a1,0(a0)
@@ -2527,6 +2655,7 @@ GRAVID_DOWN_M2:	#### funçao para descer
 		
 		ret
 
+### MAPA 2
 MOVE_RIPPER: # Toda a movimentação do ripper 1
 		la a0,RIPPER_POS
 		lw a1,8(a0) # ver se está indo para direita ou esquerda
@@ -2660,4 +2789,75 @@ SHOT_ROCKET_ANIMA: # faz os tiros andarem até uma certa distancia e depois sumi
 			bnez a1,LOOP_SHOT_ROCKET
 			
 			ret
+			
+TRANSICAO_MAP3: # Passar para o mapa 3
+		la a0,MAP_POS
+		sw zero,0(a0)
+		sw zero,4(a0)
+		
+		la a0,CHAR_POS
+		li a1,32
+		sw a1,0(a0)
+		li a1,97
+		sw a1,4(a0)
+			
+
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
 		
