@@ -29,7 +29,8 @@
 .include "mapsitens/missilefire.s"
 .include "mapsitens/missilefire1.s"
 .include "mapsitens/missilstats.s"
-
+.include "mapsitens/endscreen.s"
+.include "mapsitens/gameoverscreen.s"
 
 .include "samus/Samusr0.s"
 .include "samus/Samusl0.s"
@@ -75,6 +76,7 @@ RIPPER_POS: .word 123,71,1,4,0 # x,y,direção que está indo, vida, se está co
 SHOT_ROCKETS: .word 0,0,0,0,0,0,0,0,0,0,0,0 # posição x,y,ativo (1 até 10) ou não(0), direção 0 esq/1 dir. Isso para cada um dos 3 tiros
 RIDLEY_POS: .word 538,168,30,0,0,1 # x, y, vida, delay pulo, delay tiro, frame atual (0, 1 ou 2)
 RIDLEY_HIT: .word 0,0,0,0,0,0,0 # posição x, y, O ULTIMO É APENAS PARA MOSTRAR O FRAME DE CADA TIRO. Isso para cada um dos 3 tiros
+LIFE_RIDLEY: .word 30
 
 .text
 SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -747,6 +749,10 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 			j TRANSICAO_MAP2
 			
 	END_LOOP_1:	### AQUI O FRAME É ALTERADO
+			la a0,LIFE_SAMUS
+			lw a1,0(a0)
+			blez a1,GAMEOVER_SCREEN
+			
 			li t0,0xFF200604 # valor para alternar os frames
 			sw s0,0(t0) # colocar o valor para alternar o frame em s0 que é a variavel dos frames
 		
@@ -2234,6 +2240,10 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 			j TRANSICAO_MAP3
 			
 	END_LOOP_1_M2:	### AQUI O FRAME É ALTERADO
+			la a0,LIFE_SAMUS
+			lw a1,0(a0)
+			blez a1,GAMEOVER_SCREEN
+			
 			li t0,0xFF200604 # valor para alternar os frames
 			sw s0,0(t0) # colocar o valor para alternar o frame em s0 que é a variavel dos frames
 		
@@ -3007,7 +3017,6 @@ LOOP_JOGO_M3:#### RENDERIZAÇÃO PERSONAGEM
 				call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
 			
 	SKIP_RIDLEY:
-	
 		la a0,RIDLEY_POS
 		lw a1,16(a0) # se tiros estão validos
 		li a2,150
@@ -3334,7 +3343,7 @@ LOOP_JOGO_M3:#### RENDERIZAÇÃO PERSONAGEM
 	PRINT_ROCKET_STATS_M3:
 			la a0,ITENS
 			lh a1,2(a0)
-			beqz a1,END_LOOP_3
+			beqz a1,DANO_SAMUS_RIDLEY
 			
 			la a0,missilstats #INICIA O REGISTRADOR COM A IMAGEM DO MENU
 			li a1,64 # LARGURA DA IMAGEM
@@ -3342,7 +3351,175 @@ LOOP_JOGO_M3:#### RENDERIZAÇÃO PERSONAGEM
 			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
 			call PRINT
 			
+	DANO_SAMUS_RIDLEY: # verifica se a samus está encostada no ridley
+			la a0,DELAY
+			lh a1,0(a0)
+			li a0,100
+			rem a1,a1,a0
+			bnez a1,DANO_SHOTS_M3
+			
+			la a1,CHAR_POS
+			lw a0,0(a1)
+			lw a1,4(a1)
+			li a2,24
+			li a3,32
+			
+			la t1,RIDLEY_POS
+			lw t0,0(t1)
+			lw t1,4(t1)
+			li t2,32
+			li t3,40
+			call VERIFICA_HIT_BOX
+			
+			beqz a6,DANO_SHOTS_M3
+			
+			# se a colisão foi detectada, a samus perde vida
+			la a0,LIFE_SAMUS
+			lw a1,0(a0)
+			addi a1,a1,-5
+			sw a1,0(a0)
+	
+	DANO_SHOTS_M3:
+			li t4,3
+			la t5,SHOT_BEAMS
+			
+		HIT_SHOTS_M3:	
+				la a0,DELAY
+				lh a1,0(a0)
+				li a0,100
+				rem a1,a1,a0
+				bnez a1,DANO_SHOTS_RIDLEY_M3
+				
+				lw t1,8(t5) # se o tiro não estiver ativo, pula para o proximo
+				beqz t1,FIM_HIT_SHOTS_M3
+				
+				lw a0,0(t5)
+				lw a1,4(t5)
+				li a2,8
+				li a3,8
+				
+				la t1,RIDLEY_POS
+				lw t0,0(t1)
+				lw t1,4(t1)
+				li t2,32
+				li t3,40
+				call VERIFICA_HIT_BOX
+				
+				beqz a6,FIM_HIT_SHOTS_M3
+				
+				lw a0,12(t5)
+				bnez a0,HIT_ICE_BEAM_M3
+				
+		HIT_NORMAL_BEAM_M3:
+				sw zero,8(t5) # desativa tiro
+				la t1,LIFE_RIDLEY
+				lw t0,0(t1)
+				addi t0,t0,-1 # da o dano
+				sw t0,0(t1)
+				
+				j FIM_HIT_SHOTS_M3
+				
+		HIT_ICE_BEAM_M3:
+				sw zero,8(t5) # desativa tiro
+				la t1,LIFE_RIDLEY
+				lw t0,0(t1)
+				addi t0,t0,-2 # da o dano
+				sw t0,0(t1)
+				
+		FIM_HIT_SHOTS_M3:	
+				addi t5,t5,20
+				addi t4,t4,-1
+				beqz t4,DANO_SHOTS_ROCKET_M3
+				
+				j HIT_SHOTS_M3
+	
+	DANO_SHOTS_ROCKET_M3:
+			li t4,3
+			la t5,SHOT_ROCKETS
+			
+		HIT_SHOTS_ROCKET_M3:	
+				lw t1,8(t5) # se o tiro não estiver ativo, pula para o proximo
+				beqz t1,FIM_HIT_SHOTS_ROCKET_M3
+				
+				lw a0,0(t5)
+				lw a1,4(t5)
+				li a2,16
+				li a3,8
+				
+				la t1,RIDLEY_POS
+				lw t0,0(t1)
+				lw t1,4(t1)
+				li t2,32
+				li t3,40
+				call VERIFICA_HIT_BOX
+				
+				beqz a6,FIM_HIT_SHOTS_ROCKET_M3
+				
+				sw zero,8(t5)
+				la t1,LIFE_RIDLEY
+				lw t0,0(t1)
+				addi t0,t0,-4
+				sw t0,0(t1)
+				
+		FIM_HIT_SHOTS_ROCKET_M3:	
+				addi t5,t5,16
+				addi t4,t4,-1
+				beqz t4,DANO_SHOTS_RIDLEY_M3
+				
+				j HIT_SHOTS_ROCKET_M3
+				
+	DANO_SHOTS_RIDLEY_M3:
+			li t4,3
+			la t5,RIDLEY_HIT
+			
+		HIT_SHOTS_RIDLEY_M3:
+				la a0,DELAY
+				lh a1,0(a0)
+				li a0,100
+				rem a1,a1,a0
+				bnez a1,END_LOOP_3
+				
+				la a0,RIDLEY_POS
+				lw a1,16(a0) # se tiros estão validos
+				li a2,150
+				blt a1,a2,END_LOOP_3 # se nao estiverem pula o dano
+				
+				lw a0,0(t5)
+				lw a1,4(t5)
+				li a2,8
+				li a3,8
+				
+				la t1,CHAR_POS
+				lw t0,0(t1)
+				lw t1,4(t1)
+				li t2,24
+				li t3,32
+				call VERIFICA_HIT_BOX
+				
+				beqz a6,FIM_HIT_SHOTS_RIDLEY_M3
+				
+				# se a colisão foi detectada, a samus perde vida
+				la a0,LIFE_SAMUS
+				lw a1,0(a0)
+				addi a1,a1,-5
+				sw a1,0(a0)
+				
+		FIM_HIT_SHOTS_RIDLEY_M3:	
+				addi t5,t5,8
+				addi t4,t4,-1
+				beqz t4,END_LOOP_3
+				
+				j HIT_SHOTS_RIDLEY_M3
+			
 	END_LOOP_3:	### AQUI O FRAME É ALTERADO
+			la a0,LIFE_SAMUS
+			lw a1,0(a0)
+			blez a1,GAMEOVER_SCREEN
+			
+			la a0,LIFE_RIDLEY
+			lw a0,0(a0)
+			blez a0,END_SCREEN
+			
 			li t0,0xFF200604 # valor para alternar os frames
 			sw s0,0(t0) # colocar o valor para alternar o frame em s0 que é a variavel dos frames
 		
@@ -4014,8 +4191,56 @@ SHOT_RIDLEY_ANIMA: # faz os tiros andarem até uma certa distancia e depois sumi
 	SHOT_RIDLEY_RET:
 		ret		
 		
-			
-			
+GAMEOVER_SCREEN:
+		la a0,cenarioreset #INICIA O REGISTRADOR COM A IMAGEM DO MENU
+		li a1,0 # LARGURA DA IMAGEM
+		li a2,0 # ALTURA DA IMAGEM
+		li a3,0 #frame atual, começa em 0 e vai ser incrementado no frame
+		#FRAME 0 = 0xFF00 0000
+		#FRAME 1 = 0xFF10 0000
+		call PRINT
+		# IMPRIMIR NO FRAME 1 TAMBÉM
+		li a3,1
+		call PRINT
+
+GAMEOVER_SCREEN1:
+		la a0,gameoverscreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
+		li a1,32 # LARGURA DA IMAGEM
+		li a2,0 # ALTURA DA IMAGEM
+		li a3,0 #frame atual, começa em 0 e vai ser incrementado no frame  
+		#FRAME 0 = 0xFF00 0000
+		#FRAME 1 = 0xFF10 0000
+		call PRINT
+		# IMPRIMIR NO FRAME 1 TAMBÉM
+		li a3,1
+		call PRINT
+		j GAMEOVER_SCREEN1
+		
+END_SCREEN:
+		la a0,cenarioreset #INICIA O REGISTRADOR COM A IMAGEM DO MENU
+		li a1,0 # LARGURA DA IMAGEM
+		li a2,0 # ALTURA DA IMAGEM
+		li a3,0 #frame atual, começa em 0 e vai ser incrementado no frame
+		#FRAME 0 = 0xFF00 0000
+		#FRAME 1 = 0xFF10 0000
+		call PRINT
+		# IMPRIMIR NO FRAME 1 TAMBÉM
+		li a3,1
+		call PRINT
+
+END_SCREEN1:
+		la a0,endscreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
+		li a1,32 # LARGURA DA IMAGEM
+		li a2,0 # ALTURA DA IMAGEM
+		li a3,0 #frame atual, começa em 0 e vai ser incrementado no frame  
+		#FRAME 0 = 0xFF00 0000
+		#FRAME 1 = 0xFF10 0000
+		call PRINT
+		# IMPRIMIR NO FRAME 1 TAMBÉM
+		li a3,1
+		call PRINT
+		j END_SCREEN1
+	
 			
 			
 			
