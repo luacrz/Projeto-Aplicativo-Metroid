@@ -73,9 +73,8 @@ ITENS: .half 0,0
 DOORS: .half 6,6,6,6
 RIPPER_POS: .word 123,71,1,4,0 # x,y,direção que está indo, vida, se está congelado
 SHOT_ROCKETS: .word 0,0,0,0,0,0,0,0,0,0,0,0 # posição x,y,ativo (1 até 10) ou não(0), direção 0 esq/1 dir. Isso para cada um dos 3 tiros
-RIDLEY_POS: .word 538,168,30,0,0 # x,y, vida, delay pulo, delay tiro
-RIDLEY_HIT: .word 0,0,0,0,0,0,0,0,0,0 # posição x,y,ativo (1 até 30) ou não(0), O ULTIMO É APENAS PARA MOSTRAR O FRAME DE CADA TIRO. Isso para cada um dos 3 tiros
-
+RIDLEY_POS: .word 538,168,30,0,0,1 # x, y, vida, delay pulo, delay tiro, frame atual (0, 1 ou 2)
+RIDLEY_HIT: .word 0,0,0,0,0,0,0 # posição x, y, O ULTIMO É APENAS PARA MOSTRAR O FRAME DE CADA TIRO. Isso para cada um dos 3 tiros
 
 .text
 SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -775,14 +774,6 @@ KEY2:	#### EXEMPLO LAMAR: VERIFICA SE O BOTÃO FOI PRESSIONADO
 		
 		li t0,'f' # coloca o valor da tecla
 		beq t2,t0,START_ICE_SHOT # verifica se o usuario pressionou o 'f'
-		
-		#la a0,FRAME_SAMUS # verifica se a samus está no chão
-		#lh a1,0(a0)
-		#li a2,4
-		#beq  a1,a2,NO_PRESS
-		
-		#la a0,FRAME_SAMUS # se a Samus estiver parada e no chão coloca o frame inicial dela como o atual
-		#sh zero,0(a0)
 		
 	NO_PRESS:	ret
 	
@@ -2232,7 +2223,7 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 			li a2,24
 			li a3,32
 			
-			li t0,1256
+			li t0,232
 			li t1,80
 			li t2,8
 			li t3,48
@@ -2273,13 +2264,6 @@ KEY2_M2:	#### EXEMPLO LAMAR: VERIFICA SE O BOTÃO FOI PRESSIONADO
 		
 		li t0,'r' # coloca o valor da tecla
 		beq t2,t0,START_ROCKET_SHOT # verifica se o usuario pressionou o 'f'
-		#la a0,FRAME_SAMUS # verifica se a samus está no chão
-		#lh a1,0(a0)
-		#li a2,4
-		#beq  a1,a2,NO_PRESS
-		
-		#la a0,FRAME_SAMUS # se a Samus estiver parada e no chão coloca o frame inicial dela como o atual
-		#sh zero,0(a0)
 		
 	NO_PRESS_M2:	ret
 	
@@ -2444,7 +2428,7 @@ JUMP_M2:	#### executa todas as etapas do pulo
 			lw t1,0(t3)	# Carrega o pixel da linha 1 à acima
 		    	bne t1,t6,END_JUMP_M2
 		    	
-		    	lw t1,1280(t3)
+		    	lw t1,256(t3)
 		    	#addi t1,t1,1280	# Carrega o pixel da linha 2 à acima
 		    	bne t1,t6,END_JUMP_M2
 			##############
@@ -2466,7 +2450,7 @@ COLIS_DOWN_M2:	#### confere se pode andar pra baixo
 	    	la t0, CHAR_POS	# Carrega a posição atual da Samus
 	    	lw t1, 0(t0) # Carrega a posição X atual da Samus (horizontal)
 	    	lw t2, 4(t0) # Carrega a posição Y atual da Samus (vertical)
-		addi t2,t2,27 # adiciona o tamanho da samus para verificar a parte de baixo da hitbox (APENAS PARA BAIXO)
+		addi t2,t2,31 # adiciona o tamanho da samus para verificar a parte de baixo da hitbox (APENAS PARA BAIXO)
 		
 	    	# Obter o tamanho da linha de pixels do cenario2
 	    	la a0,cenario2 # Carrega o endereço do cenario2
@@ -2486,7 +2470,7 @@ COLIS_DOWN_M2:	#### confere se pode andar pra baixo
 			lw t1,0(t3)	# Carrega o pixel da linha 1 à acima
 		    	bne t1,t6,COLISAO_DET_DOWN_M2
 		    	
-		    	lw t1,1280(t3)	# Carrega o pixel da linha 2 à abaixo
+		    	lw t1,256(t3)	# Carrega o pixel da linha 2 à abaixo
 		    	#addi t1,t1,1280	# Carrega o pixel da linha 2 à abaixo
 		    	bne t1,t6,COLISAO_DET_DOWN_M2
 			##############
@@ -2801,14 +2785,1235 @@ TRANSICAO_MAP3: # Passar para o mapa 3
 		li a1,97
 		sw a1,4(a0)
 			
+LOOP_JOGO_M3:#### RENDERIZAÇÃO PERSONAGEM
+		la a0,DELAY
+		lh a1,0(a0)
+		addi a1,a1,1
+		
+		li a2,301
+		bne a1,a2,N_RESET_DELAY_M3
+		li a1,0
+		
+	N_RESET_DELAY_M3:
+		sh a1,0(a0)
+		
+		addi a2,zero,30
+		rem a1,a1,a2
+		bnez a1,SKIP_JUMP_M3
+		
+		call JUMP_M3
+		call GRAVID_DOWN_M3
+	
+	SKIP_JUMP_M3:
+			call KEY2_M3 # chama função para verificar se algum botão foi apertado
+			
+			xori s0,s0,1 # alterna entre os frames 
+			
+			la a0,cenario3 #INICIA O REGISTRADOR COM A IMAGEM DO cenario
+			li a1,0 # LARGURA DA IMAGEM
+			li a2,0 # ALTURA DA IMAGEM
+			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+			call PRINT_MAPA_M3
+						
+	PRINT_SAMUS_ARAN_M3:
+			### DECIDE QUE LADO QUE A SAMUS IRA OLHAR BASEADO NA DIREÇÃO QUE ELA ESTA INDO
+			la a0, LAST_DIREC  # Carrega o endereço da string LAST_DIREC no registrador a0
+			lw a1, 0(a0)       # Carrega o primeiro byte da string (o caractere 'd') em a1
+		  	
+			li a0,'a' # coloca o valor da tecla
+			beq a1,a0,CHAR_LADO_ESQ_M3 # verifica se o usuario pressionou o 'a'
+			
+			li a0,'d' # coloca o valor da tecla
+			beq a1,a0,CHAR_LADO_DIR_M3 # verifica se o usuario pressionou o 'd'
+			
+		CHAR_LADO_ESQ_M3: ### IMPRIME A SAMUS PARA O LADO ESQUERDO
+				la a0, FRAME_SAMUS  # Carrega o endereço da string LAST_DIREC no registrador a0
+				lh a1, 0(a0)
+				add a2,zero,zero
+				beq a1,a2,CHAR_0_ESQ_M3
+				addi a2,zero,1
+				beq a1,a2,CHAR_1_ESQ_M3
+				addi a2,zero,2
+				beq a1,a2,CHAR_2_ESQ_M3
+				addi a2,zero,3
+				beq a1,a2,CHAR_3_ESQ_M3
+				addi a2,zero,4
+				beq a1,a2,CHAR_JUMP_ESQ_M3
+		CHAR_0_ESQ_M3:
+				la a0,Samusl0 # recebe a imagem da samus base esquerda
+				j PRINT_SAMUS_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+		CHAR_1_ESQ_M3:
+				la a0,Samusl1 # recebe a imagem da samus base esquerda
+				j PRINT_SAMUS_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+		CHAR_2_ESQ_M3:
+				la a0,Samusl2 # recebe a imagem da samus base esquerda
+				j PRINT_SAMUS_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+		CHAR_3_ESQ_M3:
+				la a0,Samusl3 # recebe a imagem da samus base esquerda
+				j PRINT_SAMUS_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+		CHAR_JUMP_ESQ_M3:
+				la a0,Samusljump # recebe a imagem da samus base esquerda
+				j PRINT_SAMUS_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+				
+		CHAR_LADO_DIR_M3:	
+		
+		### CONTINUAR DAQUI
+				la a0,FRAME_SAMUS  # Carrega o endereço da string LAST_DIREC no registrador a0
+				lh a1,0(a0)
+				add a2,zero,zero
+				beq a1,a2,CHAR_0_DIR_M3
+				addi a2,zero,1
+				beq a1,a2,CHAR_1_DIR_M3
+				addi a2,zero,2
+				beq a1,a2,CHAR_2_DIR_M3
+				addi a2,zero,3
+				beq a1,a2,CHAR_3_DIR_M3
+				addi a2,zero,4
+				beq a1,a2,CHAR_JUMP_DIR_M3
+		CHAR_0_DIR_M3:
+				la a0,Samusr0 # recebe a imagem da samus base esquerda
+				j PRINT_SAMUS_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+		CHAR_1_DIR_M3:
+				la a0,Samusr1 # recebe a imagem da samus base esquerda
+				j PRINT_SAMUS_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+		CHAR_2_DIR_M3:
+				la a0,Samusr2 # recebe a imagem da samus base esquerda
+				j PRINT_SAMUS_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+		CHAR_3_DIR_M3:
+				la a0,Samusr3 # recebe a imagem da samus base esquerda
+				j PRINT_SAMUS_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+		CHAR_JUMP_DIR_M3:
+				la a0,Samusrjump # recebe a imagem da samus base esquerda
+				j PRINT_SAMUS_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+		
+				
+		PRINT_SAMUS_M3:	### DESENHA A SAMUS
+				la t0,CHAR_POS # carrega a posição do pesonagem em t0
+				lw a1,0(t0) # posição horizontal
+				
+				la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
+				lw a4,0(t1)
+				
+				sub a1,a1,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
+				
+				lw a2,4(t0) # posição vertical
+				mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+				call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+		
+		la t0,DELAY
+		lh t0,0(t0)
+		li t1,50
+		rem t1,t0,t1
+		bnez t1,DELAY_TIRO_RIDLEY
+		
+		la a0,RIDLEY_POS
+		lw a1,12(a0)
+		li t0,200
+		bgt a1,t0,DELAY_TIRO_RIDLEY
+		addi a1,a1,1
+		sw a1,12(a0)
 
+	DELAY_TIRO_RIDLEY:
+		#la t0,DELAY
+		#lh t0,0(t0)
+		#li t1,10
+		#rem t1,t0,t1
+		#bnez t1,ACTIONS_RIDLEY
+		
+		lw a1,16(a0)
+		li t0,150
+		bgt a1,t0,ACTIONS_RIDLEY
+		addi a1,a1,1
+		sw a1,16(a0)
+
+	ACTIONS_RIDLEY:
+			lw a1,12(a0)
+			li t0,200
+			bne a1,t0,ACTIONS_RIDLEY_SHOT
+			
+			call START_JUMP_RIDLEY
+
+		ACTIONS_RIDLEY_SHOT:
+				lw a1,16(a0)
+				li t0,150
+				bne a1,t0,INIT_PRINT_RIDLEY
+				
+				call START_SHOT_RIDLEY
+
+	INIT_PRINT_RIDLEY:
+			la t0,DELAY
+			lh t0,0(t0)
+			li t1,20
+			rem t1,t0,t1
+			bnez t1,INIT_PRINT_RIDLEY2
+			
+			call SHOT_RIDLEY_ANIMA
+			
+	INIT_PRINT_RIDLEY2:	
+			la t0,DELAY
+			lh t0,0(t0)
+			li t1,50
+			rem t1,t0,t1
+			bnez t1,PRINT_RIDLEY
+			
+			call MOVE_RIDLEY
+			
+			la t0,RIDLEY_POS
+			lw t1,20(t0)
+			beqz t1,PRINT_RIDLEY
+			
+			li t2,1
+			beq t1,t2,SWAP_FRAME1_RIDLEY
+			
+			sw t2,20(t0)
+			
+			j PRINT_RIDLEY
+		
+		SWAP_FRAME1_RIDLEY:
+				li t2,2
+				sw t2,20(t0)
+				
+		PRINT_RIDLEY:	
+				la t0,RIDLEY_POS
+				lw t1,20(t0)
+				beqz t1,RIDLEY_FRAME_FLY
+				li t2,1
+				beq t1,t2,RIDLEY_FRAME_FE
+				li t2,2
+				beq t1,t2,RIDLEY_FRAME_AB
+		
+		RIDLEY_FRAME_FLY:
+				la a0,ridleyjump
+				j PRINT_RIDLEY1
+		RIDLEY_FRAME_FE:
+				la a0,ridley1
+				j PRINT_RIDLEY1
+				
+		RIDLEY_FRAME_AB:
+				la a0,ridley2
+				
+		PRINT_RIDLEY1:	la t0,RIDLEY_POS # carrega a posição do pesonagem em t0
+				lw a1,0(t0) # posição horizontal
+				
+				la t1,MAP_POS
+				lw a4,0(t1)
+				addi t1,a4,288
+				bgt a1,t1,SKIP_RIDLEY
+				
+				sub a1,a1,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
+
+				lw a2,4(t0) # posição vertical
+				mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+				call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+			
+	SKIP_RIDLEY:
+	
+		la a0,RIDLEY_POS
+		lw a1,16(a0) # se tiros estão validos
+		li a2,150
+		blt a1,a2,SKIP_RIDLEY_SHOT
+		la t0,RIDLEY_HIT # comecar a trabalhar com os tiros
+		lw a1,24(t0)
+		bnez a1,PRINT_RIDLEY_SHOT11
+		
+		sw zero,24(t0)
+		la a0,ridleyhit1 # recebe a imagem do tiro base
+		
+		j PRINT_RIDLEY_SHOT1
+
+	PRINT_RIDLEY_SHOT11:
+			li a1,1
+			sw a1,24(t0)
+			la a0,ridleyhit2 # recebe a imagem do tiro base
+
+	PRINT_RIDLEY_SHOT1:
+			lw a1,0(t0) # posição horizontal
+			
+			la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
+			lw a4,0(t1)
+			addi t1,a4,312
+			bgt a1,t1,SKIP_RIDLEY_SHOT
+			
+			sub a1,a1,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
+			
+			lw a2,4(t0) # posição vertical
+			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+			call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+		
+		la t0,RIDLEY_HIT # comecar a trabalhar com os tiros
+		lw a1,24(t0)
+		bnez a1,PRINT_RIDLEY_SHOT21
+		
+		sw zero,24(t0)
+		la a0,ridleyhit1 # recebe a imagem do tiro base
+		
+		j PRINT_RIDLEY_SHOT2
+		
+	PRINT_RIDLEY_SHOT21:
+			li a1,1
+			sw a1,24(t0)
+			la a0,ridleyhit2 # recebe a imagem do tiro base	
+		
+	PRINT_RIDLEY_SHOT2:
+			lw a1,8(t0) # posição horizontal
+			
+			la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
+			lw a4,0(t1)
+			sub a1,a1,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
+			
+			lw a2,12(t0) # posição vertical
+			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+			call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+		
+		la t0,RIDLEY_HIT # comecar a trabalhar com os tiros
+		lw a1,24(t0)
+		bnez a1,PRINT_RIDLEY_SHOT31
+		
+		sw zero,24(t0)
+		la a0,ridleyhit1 # recebe a imagem do tiro base
+		
+		j PRINT_RIDLEY_SHOT3
+		
+	PRINT_RIDLEY_SHOT31:
+			li a1,1
+			sw a1,24(t0)
+			la a0,ridleyhit2 # recebe a imagem do tiro base	
+			
+	PRINT_RIDLEY_SHOT3:
+			lw a1,16(t0) # posição horizontal
+			
+			la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
+			lw a4,0(t1)
+			sub a1,a1,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
+			
+			lw a2,20(t0) # posição vertical
+			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+			call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+				
+	SKIP_RIDLEY_SHOT:
+		li a6,3
+		la a5,SHOT_BEAMS
+			
+	PRINT_SHOTS_M3:	
+			lw t1,8(a5)
+			beqz t1,FIM_PRINT_SHOT_M3
+			lw t1,12(a5)
+			bnez t1,PRINT_NORMAL_ICE_SHOT_M3
+			
+		PRINT_NORMAL_SHOT_M3: ### DESENHA o tiro normal
+				la a0,beam # recebe a imagem do tiro base
+				lw a1,0(a5) # posição horizontal
+				
+				la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
+				lw a4,0(t1)
+				sub a1,a1,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
+				
+				lw a2,4(a5) # posição vertical
+				mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+				call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+				
+				j FIM_PRINT_SHOT_M3
+		
+		PRINT_NORMAL_ICE_SHOT_M3: ### DESENHA o tiro de gelo
+				la a0,icebeam # recebe a imagem do tiro base
+				lw a1,0(a5) # posição horizontal
+				
+				la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
+				lw a4,0(t1)
+				sub a1,a1,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
+				
+				lw a2,4(a5) # posição vertical
+				mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+				call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+				
+		FIM_PRINT_SHOT_M3:
+				addi a5,a5,20
+				addi a6,a6,-1
+				beqz a6,ANIMAR_SHOTS_M3
+				
+				j PRINT_SHOTS_M3
 			
 			
+	ANIMAR_SHOTS_M3:
+			la a0,DELAY
+			lh a1,0(a0)
+			li a0,20
+			rem a1,a1,a0
+			bnez a1,INIT_PRINT_ROCKETS_M3
+			call SHOT_ANIMA #### ANTES DISSO, ANDA COM AS BALAS
+			
+	
+	
+	INIT_PRINT_ROCKETS_M3:		
+			li a6,3
+			la a5,SHOT_ROCKETS
+			
+		PRINT_SHOTS_ROCKETS_M3:	
+				lw t1,8(a5)
+				beqz t1,FIM_PRINT_SHOT_ROCKETS_M3
+				lw t1,12(a5)
+				bnez t1,PRINT_SHOTS_ROCKETS_DIR_M3
+				
+		### DESENHA o missil
+		PRINT_SHOTS_ROCKETS_ESQ_M3:
+				la a0,missilefire # recebe a imagem do tiro base
+				j PRINT_ROCKET_M3
+				
+		PRINT_SHOTS_ROCKETS_DIR_M3:
+				la a0,missilefire1 # recebe a imagem do tiro base
+				
+		PRINT_ROCKET_M3:
+				lw a1,0(a5) # posição horizontal
+				
+				la t1,MAP_POS # carrega a posição do mapa para saber onde o personagem esta nele
+				lw a4,0(t1)				
+				sub a1,a1,a4 # realiza a subtração da posição do personagem no mapa pela tela do mapa
+				
+				lw a2,4(a5) # posição vertical
+				mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+				call PRINT # CHAMA A FUNÇÃO QUE PRINTA A SAMUS
+				
+		FIM_PRINT_SHOT_ROCKETS_M3:
+				addi a5,a5,16
+				addi a6,a6,-1
+				beqz a6,ANIMAR_SHOTS_ROCKETS_M3
+				
+				j PRINT_SHOTS_ROCKETS_M3
 			
 			
+	ANIMAR_SHOTS_ROCKETS_M3:
+			la a0,DELAY
+			lh a1,0(a0)
+			li a0,20
+			rem a1,a1,a0
+			bnez a1,PRINT_LIFE_M3
+			call SHOT_ROCKET_ANIMA #### ANTES DISSO, ANDA COM AS BALAS
 			
+	PRINT_LIFE_M3:	########## IMPRIMIR STATUS NA TELA, VIDA E ETC
+			la a0,statusfull #INICIA O REGISTRADOR COM A IMAGEM DO MENU
+			li a1,64 # LARGURA DA IMAGEM
+			li a2,32 # ALTURA DA IMAGEM
+			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+			call PRINT
 			
+		    	la t0,LIFE_SAMUS # Carrega o endereço da variável VIDA
+		    	lw t1,0(t0)# Carrega o valor de VIDA para o registrador t1
+		    
+		    	# Calcula o dígito das dezenas
+		    	li t2,10 # Carrega o valor 10 no registrador t2
+		    	div t1,t1,t2 # t1 = t1 / 10 (dividindo para remover o dígito das unidades)
+		    	rem t4,t1,t2 # t4 = t1 % 10 (dígito das dezenas)
+	
+		    	# Agora t3 contém o dígito das unidades e t4 contém o dígito das dezenas
+		    	# Você pode usar esses valores para imprimir os sprites correspondentes na tela
+		    	
+			add a2,zero,zero
+			beq t4,a2,CARACTER1_0_M3
+			addi a2,zero,1
+			beq t4,a2,CARACTER1_1_M3
+			addi a2,zero,2
+			beq t4,a2,CARACTER1_2_M3
+			addi a2,zero,3
+			beq t4,a2,CARACTER1_3_M3
+			addi a2,zero,4
+			beq t4,a2,CARACTER1_4_M3
+			addi a2,zero,5
+			beq t4,a2,CARACTER1_5_M3
+			addi a2,zero,6
+			beq t4,a2,CARACTER1_6_M3
+			addi a2,zero,7
+			beq t4,a2,CARACTER1_7_M3
+			addi a2,zero,8
+			beq t4,a2,CARACTER1_8_M3
+			addi a2,zero,9
+			beq t4,a2,CARACTER1_9_M3
+	CARACTER1_0_M3:
+			la a0,number0 # recebe a imagem da samus base esquerda
+			j PRINT_N1_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER1_1_M3:
+			la a0,number1 # recebe a imagem da samus base esquerda
+			j PRINT_N1_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER1_2_M3:
+			la a0,number2 # recebe a imagem da samus base esquerda
+			j PRINT_N1_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER1_3_M3:
+			la a0,number3 # recebe a imagem da samus base esquerda
+			j PRINT_N1_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER1_4_M3:
+			la a0,number4 # recebe a imagem da samus base esquerda
+			j PRINT_N1_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER1_5_M3:
+			la a0,number5 # recebe a imagem da samus base esquerda
+			j PRINT_N1_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER1_6_M3:
+			la a0,number6 # recebe a imagem da samus base esquerda
+			j PRINT_N1_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER1_7_M3:
+			la a0,number7 # recebe a imagem da samus base esquerda
+			j PRINT_N1_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER1_8_M3:
+			la a0,number8 # recebe a imagem da samus base esquerda
+			j PRINT_N1_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER1_9_M3:
+			la a0,number9 # recebe a imagem da samus base esquerda
+			j PRINT_N1_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
 			
+	PRINT_N1_LIFE_M3:
+			########## IMPRIMIR O PRIMEIRO DIGITO DA VIDA
+			li a1,89 # LARGURA DA IMAGEM
+			li a2,32# ALTURA DA IMAGEM
+			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+			call PRINT
+			
+			la t0,LIFE_SAMUS # Carrega o endereço da variável VIDA
+		    	lw t1,0(t0)# Carrega o valor de VIDA para o registrador t1
+		    
+		    	# Calcula o dígito das unidades
+		    	li t2,10 # Carrega o valor 10 no registrador t2
+		    	rem t3,t1,t2 # t3 = t1 % 10 (dígito das unidades)
+		    	addi t3,t3,0
+			
+			addi a2,zero,0
+			beq t3,a2,CARACTER2_0_M3
+			addi a2,zero,1
+			beq t3,a2,CARACTER2_1_M3
+			addi a2,zero,2
+			beq t3,a2,CARACTER2_2_M3
+			addi a2,zero,3
+			beq t3,a2,CARACTER2_3_M3
+			addi a2,zero,4
+			beq t3,a2,CARACTER2_4_M3
+			addi a2,zero,5
+			beq t3,a2,CARACTER2_5_M3
+			addi a2,zero,6
+			beq t3,a2,CARACTER2_6_M3
+			addi a2,zero,7
+			beq t3,a2,CARACTER2_7_M3
+			addi a2,zero,8
+			beq t3,a2,CARACTER2_8_M3
+			addi a2,zero,9
+			beq t3,a2,CARACTER2_9_M3
+	CARACTER2_0_M3:
+			la a0,number0 # recebe a imagem da samus base esquerda
+			j PRINT_N2_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER2_1_M3:
+			la a0,number1 # recebe a imagem da samus base esquerda
+			j PRINT_N2_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER2_2_M3:
+			la a0,number2 # recebe a imagem da samus base esquerda
+			j PRINT_N2_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER2_3_M3:
+			la a0,number3 # recebe a imagem da samus base esquerda
+			j PRINT_N2_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER2_4_M3:
+			la a0,number4 # recebe a imagem da samus base esquerda
+			j PRINT_N2_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER2_5_M3:
+			la a0,number5 # recebe a imagem da samus base esquerda
+			j PRINT_N2_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER2_6_M3:
+			la a0,number6 # recebe a imagem da samus base esquerda
+			j PRINT_N2_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER2_7_M3:
+			la a0,number7 # recebe a imagem da samus base esquerda
+			j PRINT_N2_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER2_8_M3:
+			la a0,number8 # recebe a imagem da samus base esquerda
+			j PRINT_N2_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+	CARACTER2_9_M3:
+			la a0,number9 # recebe a imagem da samus base esquerda
+			j PRINT_N2_LIFE_M3 # CHAMA A FUNÇÃO QUE PRINTA A SAMUS PARA A ESQUERDA
+			
+	PRINT_N2_LIFE_M3:	
+			########## IMPRIMIR O PRIMEIRO DIGITO DA VIDA
+			li a1,98 # LARGURA DA IMAGEM
+			li a2,32# ALTURA DA IMAGEM
+			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+			call PRINT
+			
+	PRINT_ROCKET_STATS_M3:
+			la a0,ITENS
+			lh a1,2(a0)
+			beqz a1,END_LOOP_3
+			
+			la a0,missilstats #INICIA O REGISTRADOR COM A IMAGEM DO MENU
+			li a1,64 # LARGURA DA IMAGEM
+			li a2,42 # ALTURA DA IMAGEM
+			mv a3,s0 # alterna o frame em que trabalhamos, definir o frame atual na verdade
+			call PRINT
+			
+	END_LOOP_3:	### AQUI O FRAME É ALTERADO
+			li t0,0xFF200604 # valor para alternar os frames
+			sw s0,0(t0) # colocar o valor para alternar o frame em s0 que é a variavel dos frames
+		
+		j LOOP_JOGO_M3 # Loop infinito para manter a execução	
+			
+### MAPA 3
+KEY2_M3:	#### EXEMPLO LAMAR: VERIFICA SE O BOTÃO FOI PRESSIONADO
+		li t1,0xFF200000		# carrega o endereço de controle do KDMMIO
+		lw t0,0(t1)			# Le bit de Controle Teclado
+		andi t0,t0,0x0001		# mascara o bit menos significativo
+	   	beq t0,zero,NO_PRESS_M3   	# Se não há tecla pressionada então vai para FIM
+	  	lw t2,4(t1)  			# le o valor da tecla apertada
+		
+		li t0,'a' # coloca o valor da tecla
+		beq t2,t0,COLIS_ESQ_M3 # verifica se o usuario pressionou o 'a'
+		
+		li t0,'d' # coloca o valor da tecla
+		beq t2,t0,COLIS_DIR_M3 # verifica se o usuario pressionou o 'd'
+		
+		li t0,'w' # coloca o valor da tecla
+		beq t2,t0,START_JUMP_M3 # verifica se o usuario pressionou o 'w'
+		
+		li t0,'e' # coloca o valor da tecla
+		beq t2,t0,START_SHOT_M3 # verifica se o usuario pressionou o 'e'
+		
+		li t0,'f' # coloca o valor da tecla
+		beq t2,t0,START_ICE_SHOT_M3 # verifica se o usuario pressionou o 'f'
+		
+		li t0,'r' # coloca o valor da tecla
+		beq t2,t0,START_ROCKET_SHOT # verifica se o usuario pressionou o 'r'
+		
+	NO_PRESS_M3:	ret
+	
+### MAPA 3
+PRINT_MAPA_M3:	#### PREPARATIVOS PARA O BITMAP DISPLAY
+		### ORGANIZANDO O BITMAP DISPLAY
+		li t0,0xFF0  	# Carregar os primeiros valores para o frame 0
+		add t0,t0,a3 	# Adicionar valor do frame, se for o (frame 0 a3 = 0) (frame 1 a3 = 1)
+		slli t0,t0,20	# Adicionar o resto dos zeros (0 0000) SHIFT DE 20 BITS PRA ESQUERDA
+		
+		add t0,t0,a1 # recebe o primeiro endereço da imagem do bitmap display para começar a percorrer
+		
+		li t1,320 # recebe tamanho total da tela do bitmap display também
+		mul t1,t1,a2 # multiplicando t1 pelo valor do Y da imagem
+		add t0,t0,t1 # adicionar tudo no endereço do bitmap display mesmo
+		
+		### ORGANIZANDO O BIT INICIAL DO MAPA
+		addi t1,a0,8 # Apenas pular a altura e largura do arquivo de imagem
+		
+		mv t2,zero # zera os dois contadores para começar o processo
+		mv t3,zero
+		
+		lw t4,0(a0) # pega a largura da imagem
+		lw t5,4(a0) # pega a altura da imagem
+		
+		la a6,MAP_POS # pega a posição atual do mapa para printar o lugar certo
+		lw t6,0(a6)
+		add t1,t1,t6
+		
+		j PRINT_LINHA
+	
+### MAPA 3
+COLIS_ESQ_M3:	#### confere se pode andar pra esquerda
+		### CARREGANDO A POSIÇÃO DA SAMUS
+	    	la t0, CHAR_POS	# Carrega a posição atual da Samus
+	    	lw t1, 0(t0) # Carrega a posição X atual da Samus (horizontal)
+	    	lw t2, 4(t0) # Carrega a posição Y atual da Samus (vertical)
+		
+	    	# Obter o tamanho da linha de pixels do cenario1
+	    	la a0,cenario3 # Carrega o endereço do cenario1
+	    	lw t4,0(a0)    # Carrega o tamanho da linha de pixels (x) do cenario1
+		
+	    	# Calcular o offset para a posição da Samus no cenário
+	    	mul t5,t2,t4    # Multiplica a linha pela largura para obter o offset da linha
+	    	add t5,t5,t1    # Adiciona a posição X para obter o endereço exato
+		
+		addi t3,a0,12 ### pula os valores de tamanho da imagem do cenario e o valor para a samus se aproximar igualmente da parede
+		#addi t5,t5,-2
+		#add t3,a0,zero
+	    	add t3,t3,t5	# adiciona todo o offset
+	    	
+	    	li a1,20 # contador de 36 linhas para samus
+	    	
+	VERIFICA_PIXEIS_ESQ_M3: ### Verificar as duas colunas à direita
+			lw t1,0(t3)	# Carrega o pixel da coluna 1 à direita
+		    	lw t5,4(t3)     # Carrega o pixel da coluna 2 à direita
+			
+		    	# Verifica se as duas colunas são pretas (0x000000)
+		    	li t6,0x000000  # Valor preto
+		    	bne t1,t6,COLISAO_DET_ESQ_M3
+		    	bne t5,t6,COLISAO_DET_ESQ_M3
+			##############
+			addi a1,a1,-1
+			add t3,t3,t4
+			bnez a1,VERIFICA_PIXEIS_ESQ_M3
+			##############
+			j CHAR_ESQ_M3
+			
+	COLISAO_DET_ESQ_M3:
+			la a0,GRAVIDADE # verifica se a samus está no chão
+			lh a1,0(a0)
+			bnez a1,COLISAO_DET_ESQ_RET_M3
+			
+			la a0,FRAME_SAMUS # se a Samus estiver parada e no chão coloca o frame inicial dela como o atual
+			sh zero,0(a0)
+	COLISAO_DET_ESQ_RET_M3:
+		    	ret
+
+### MAPA 3
+COLIS_DIR_M3:	#### confere se pode andar pra direita
+		### CARREGANDO A POSIÇÃO DA SAMUS
+	    	la t0, CHAR_POS	# Carrega a posição atual da Samus
+	    	lw t1, 0(t0) # Carrega a posição X atual da Samus (horizontal)
+	    	lw t2, 4(t0) # Carrega a posição Y atual da Samus (vertical)
+		
+	    	# Obter o tamanho da linha de pixels do cenario1
+	    	la a0,cenario3 # Carrega o endereço do cenario1
+	    	lw t4,0(a0)    # Carrega o tamanho da linha de pixels (x) do cenario1
+		
+	    	# Calcular o offset para a posição da Samus no cenário
+	    	mul t5,t2,t4    # Multiplica a linha pela largura para obter o offset da linha
+	    	add t5,t5,t1    # Adiciona a posição X para obter o endereço exato
+		
+		#addi t3,a0,8 ### pula os valores de tamanho da imagem do cenario 
+		add t3,a0,zero
+	    	addi t3,t3,20   # Pula 20 pixels à direita
+	    	add t3,t3,t5	# adiciona todo o offset
+	    	
+	    	li a1,20 # contador de 32 linhas para samus
+
+	VERIFICA_PIXEIS_DIR_M3: ### Verificar as duas colunas à direita
+			lw t1,0(t3)	# Carrega o pixel da coluna 1 à direita
+		    	lw t5,4(t3)     # Carrega o pixel da coluna 2 à direita
+			
+		    	# Verifica se as duas colunas são pretas (0x000000)
+		    	li t6,0x000000  # Valor preto
+		    	bne t1,t6,COLISAO_DET_DIR_M3
+		    	bne t5,t6,COLISAO_DET_DIR_M3
+			##############
+			addi a1,a1,-1
+			add t3,t3,t4
+			bnez a1,VERIFICA_PIXEIS_DIR_M3
+			##############
+			j CHAR_DIR_M3
+	COLISAO_DET_DIR_M3:
+			la a0,GRAVIDADE # verifica se a samus está no chão
+			lh a1,0(a0)
+			bnez a1,COLISAO_DET_DIR_RET_M3
+			
+			la a0,FRAME_SAMUS # se a Samus estiver parada e no chão coloca o frame inicial dela como o atual
+			sh zero,0(a0)
+	COLISAO_DET_DIR_RET_M3:
+		    	ret
+
+### MAPA 3
+JUMP_M3:	#### executa todas as etapas do pulo
+		### pega os valores de gravidade, se for 0 ou o valor maximo do salto, o salto é encerrado
+		la a0,GRAVIDADE
+		lh a1,0(a0)
+		
+		add a2,zero,zero
+		beq a1,a2,END_JUMP_M3 # se o valor de gravidade for 0, não está ocorrendo salto e nada precisa ser feito
+		addi a2,zero,1
+		beq a1,a2,END_JUMP_M3 # se o valor de gravidade for 1, a samus está descendo e nada precisa ser feito
+		addi a2,zero,60
+		beq a1,a2,END_JUMP_M3 # se o valor de gravidade for o maximo definido acima, não está mais ocorrendo salto e nada precisa ser feito
+		
+		### CARREGANDO A POSIÇÃO DA SAMUS
+	    	la t0, CHAR_POS	# Carrega a posição atual da Samus
+	    	lw t1, 0(t0) # Carrega a posição X atual da Samus (horizontal)
+	    	lw t2, 4(t0) # Carrega a posição Y atual da Samus (vertical)
+		###addi t2,t2,31 # adiciona o tamanho da samus para verificar a parte de cima da hitbox (APENAS PARA CIMA)
+		addi t2,t2,-2
+	    	# Obter o tamanho da linha de pixels do cenario1
+	    	la a0,cenario3 # Carrega o endereço do cenario1
+	    	lw t4,0(a0)    # Carrega o tamanho da linha de pixels (x) do cenario1
+		
+	    	# Calcular o offset para a posição da Samus no cenário
+	    	mul t5,t2,t4    # Multiplica a linha pela altura para obter o offset da linha
+	    	add t5,t5,t1    # Adiciona a posição X(largura) para obter o endereço exatao
+		
+		addi t3,a0,14 ### pula os valores de tamanho da imagem do cenario e alguns para não verificar demais a esquerda
+	    	add t3,t3,t5	# adiciona todo o offset
+	    	
+	    	li a1,8 # contador de 00 colunas para hitbox de cima da samus
+	    	li t6,0x000000  # Valor preto
+	    	
+	VERIF_PIXEIS_UP_M3: ### Verificar se as duas colunas à direita são pretas (0x000000)
+			lw t1,0(t3)	# Carrega o pixel da linha 1 à acima
+		    	bne t1,t6,END_JUMP_M3
+		    	
+		    	lw t1,1024(t3)
+		    	#addi t1,t1,1280	# Carrega o pixel da linha 2 à acima
+		    	bne t1,t6,END_JUMP_M3
+			##############
+			addi a1,a1,-1
+			addi t3,t3,1
+			bnez a1,VERIF_PIXEIS_UP_M3
+			##############
+			j CHAR_UP_M3
+		
+	END_JUMP_M3: #### termina o pulo, colocando o valor 1 de volta na gravidade, o que libera a descida
+			la a0,GRAVIDADE #
+			addi a1,zero,1
+			sh a1,0(a0)
+			ret
+
+### MAPA 3
+COLIS_DOWN_M3:	#### confere se pode andar pra baixo
+		### CARREGANDO A POSIÇÃO DA SAMUS
+	    	la t0, CHAR_POS	# Carrega a posição atual da Samus
+	    	lw t1, 0(t0) # Carrega a posição X atual da Samus (horizontal)
+	    	lw t2, 4(t0) # Carrega a posição Y atual da Samus (vertical)
+		###addi t2,t2,31 # adiciona o tamanho da samus para verificar a parte de baixo da hitbox (APENAS PARA BAIXO)
+		addi t2,t2,31
+	    	# Obter o tamanho da linha de pixels do cenario1
+	    	la a0,cenario3 # Carrega o endereço do cenario1
+	    	lw t4,0(a0)    # Carrega o tamanho da linha de pixels (x) do cenario1
+		
+	    	# Calcular o offset para a posição da Samus no cenário
+	    	mul t5,t2,t4    # Multiplica a linha pela altura para obter o offset da linha
+	    	add t5,t5,t1    # Adiciona a posição X(largura) para obter o endereço exatao
+		
+		addi t3,a0,14 ### pula os valores de tamanho da imagem do cenario e alguns para não verificar demais a esquerda
+	    	add t3,t3,t5	# adiciona todo o offset
+	    	
+	    	li a1,8 # contador de 00 colunas para hitbox de cima da samus
+	    	li t6,0x000000  # Valor preto
+	    	
+	VERIF_PIXEIS_DOWN_M3: ### Verificar se as duas colunas à direita são pretas (0x000000)
+			lw t1,0(t3)	# Carrega o pixel da linha 1 à acima
+		    	bne t1,t6,COLISAO_DET_DOWN_M3
+		    	
+		    	lw t1,1024(t3)
+		    	#addi t1,t1,1280	# Carrega o pixel da linha 2 à acima
+		    	bne t1,t6,COLISAO_DET_DOWN_M3
+			##############
+			addi a1,a1,-1
+			addi t3,t3,1
+			bnez a1,VERIF_PIXEIS_DOWN_M3
+			##############
+			j CHAR_DOWN_M3
+	COLISAO_DET_DOWN_M3:
+			la a0,GRAVIDADE
+			sh zero,0(a0)
+			
+			la a0,FRAME_SAMUS
+			lh a1,0(a0)
+			addi a2,zero,4
+			bne a1,a2,COLISAO_DET_DOWN_RET_M3
+			la a0,FRAME_SAMUS # se a Samus estiver voando,coloca o frame inicial dela como o atual
+			sh zero,0(a0)
+			
+	COLISAO_DET_DOWN_RET_M3:
+		    	ret
+
+### MAPA 3
+CHAR_ESQ_M3: #### MOVIMENTA A SAMUS PARA A ESQUERDA
+		la t0,MAP_POS
+		lw t1,0(t0)
+		beqz t1,CHAR_ESQ_ONLY_CHAR_M3
+		
+		addi t1,t1,-2
+		sw t1,0(t0)
+		
+	CHAR_ESQ_ONLY_CHAR_M3:
+			la t0,CHAR_POS # carrega posiçao da samus em t0
+			lw t1,0(t0) # carrega o x da posição para alterar
+			addi t1,t1,-2 # diminiu o valor do x, para ir para a esquerda
+			sw t1,0(t0) # coloca o valor de volta no char_pos
+			
+			li t0,'a' # coloca o valor da tecla
+			la t3,LAST_DIREC # carrega a variavel de ultima direção da samus em t3
+			sb t0,0(t3) # salva a ultima direção da samus como esquerda
+			
+			la a0,GRAVIDADE # verifica se a samus está no chão
+			lh a1,0(a0)
+			bnez a1,CHAR_ESQ_RET_M3 # se não estiver pula todo o processo de animação
+			
+			la a0,DELAY_WALK # BLOCO DE DELAY PARA ANIMACAO DE ANDAR
+			lh a1,0(a0)
+			addi a1,a1,1
+			sh a1,0(a0)
+			addi a2,zero,2
+			blt a1,a2,CHAR_ESQ_RET_M3
+			sh zero,0(a0)
+			
+			la a0,FRAME_SAMUS # se a Samus estiver no chão coloca os frames de animação
+			lh a1,0(a0)
+			addi a1,a1,1
+			sh a1,0(a0)
+			
+			li a2,4 # se o frame já for o de pulo, coloca o primeiro de andar de novo
+			beq a1,a2,WALK_INIT_ANIME_M3
+			
+	CHAR_ESQ_RET_M3:	ret
+
+### MAPA 2
+CHAR_DIR_M3: #### MOVIMENTA A SAMUS PARA A direita		
+		la t0,MAP_POS
+		lw t1,0(t0)
+		la a0,CHAR_POS
+		lw a0,0(a0)
+		sub a0,a0,t1
+		li a1,150
+		blt a0,a1,CHAR_DIR_ONLY_CHAR_M3
+		
+		addi t1,t1,2
+		sw t1,0(t0)
+		
+	CHAR_DIR_ONLY_CHAR_M3:
+			la t0,CHAR_POS # carrega posiçao da samus em t0
+			lw t1,0(t0) # carrega o x da posição para alterar
+			addi t1,t1,2 # aumenta o valor do x, para ir para a direita
+			sw t1,0(t0) # coloca o valor de volta no char_pos
+			
+			li t0,'d' # coloca o valor da tecla
+			la t3,LAST_DIREC # carrega a variavel de ultima direção da samus em t3
+			sb t0,0(t3) # salva a ultima direção da samus como direita
+			
+			la a0,GRAVIDADE # verifica se a samus está no chão
+			lh a1,0(a0)
+			bnez a1,CHAR_DIR_RET_M3 # se não estiver pula todo o processo de animação
+			
+			la a0,DELAY_WALK # BLOCO DE DELAY PARA ANIMACAO DE ANDAR
+			lh a1,0(a0)
+			addi a1,a1,1
+			sh a1,0(a0)
+			addi a2,zero,2
+			blt a1,a2,CHAR_ESQ_RET_M3
+			sh zero,0(a0)
+			
+			la a0,FRAME_SAMUS # se a Samus estiver no chão coloca os frames de animação
+			lh a1,0(a0)
+			addi a1,a1,1
+			sh a1,0(a0)
+			
+			li a2,4 # se o frame já for o de pulo, coloca o primeiro de andar de novo
+			beq a1,a2,WALK_INIT_ANIME_M3
+			
+	CHAR_DIR_RET_M3:	ret
+
+### MAPA 2
+WALK_INIT_ANIME_M3:
+		li a1,1
+		sh a1,0(a0)
+		
+		ret
+
+### MAPA 2
+CHAR_UP_M3: #### MOVIMENTA A SAMUS PARA cima
+		la t0,CHAR_POS # carrega posiçao da samus em t0		
+		lw t1,4(t0) # carrega o y da posição para alterar
+		addi t1,t1,-2 # aumenta o valor do y, para ir para a cima
+		sw t1,4(t0) # coloca o valor de volta no char_pos
+		
+		### adiciona 1 no valor do salto
+		la a0,GRAVIDADE
+		lh a1,0(a0)
+		addi a1,a1,1
+		sh a1,0(a0)
+		
+		ret
+
+### MAPA 2
+CHAR_DOWN_M3: #### MOVIMENTA A SAMUS PARA baixo
+		la t0,CHAR_POS # carrega posiçao da samus em t0
+		lw t1,4(t0) # carrega o y da posição para alterar
+		addi t1,t1,2 # aumenta o valor do y, para ir para a cima
+		sw t1,4(t0) # coloca o valor de volta no char_pos
+		
+		la a0,GRAVIDADE
+		li a1,1
+		sh a1,0(a0)
+		
+		la a0,FRAME_SAMUS # coloca o frame da samus pulando já
+		li a1,4
+		sh a1,0(a0)
+		
+		ret
+
+### MAPA 2
+GRAVID_DOWN_M3:	#### funçao para descer
+		#la a0,GRAVIDADE
+		#lh a1,0(a0)
+		la a0,GRAVIDADE # Carrega o valor de GRAVIDADE no registrador a0
+		lh a0,0(a0)
+    		li a1,2 # Carrega o valor 2 no registrador a1
+    		blt a0,a1,COLIS_DOWN_M3
+		
+		ret
+
+START_JUMP_M3: ####### inicia os valores para que o pulo ocorra
+		la a0,GRAVIDADE
+		lh a1,0(a0)
+		
+		bnez a1,NO_FLOOR_M3
+		
+		addi a1,zero,2
+		sh a1,0(a0)
+		
+		la a0,FRAME_SAMUS # coloca o frame da samus pulando já
+		li a1,4
+		sh a1,0(a0)
+		
+	NO_FLOOR_M3:	
+			ret
+
+START_SHOT_M3: # inicia um tiro
+		la a0,FRAME_SAMUS # se a Samus estiver no chão coloca os frames de animação
+		sh zero,0(a0)
+		
+		la t0,SHOT_BEAMS
+		lw t1,8(t0)
+		la t2,CHAR_POS
+		lw t3,0(t2)
+		lw t4,4(t2)
+		bnez t1,SHOT_2_M3 # quando o primeiro tiro já estiver ativo, pula para outro.
+		
+		j SHOT_LADO_M3
+		
+	SHOT_2_M3:	addi t0,t0,20
+			lw t1,8(t0)
+			bnez t1,SHOT_3_M3
+			
+			j SHOT_LADO_M3
+			
+	SHOT_3_M3:	addi t0,t0,20
+			lw t1,8(t0)
+			beqz t1,SHOT_LADO_M3
+			
+			ret
+	SHOT_LADO_M3:	
+			la t5,LAST_DIREC
+			lw t5,0(t5)
+			li t1,'a' # coloca o valor da tecla
+			beq t5,t1,SHOT_ESQ_M3 # verifica se a ultima tecla pressionada pelo usuario é 'a'
+			
+			li t1,'d' # coloca o valor da tecla
+			beq t5,t1,SHOT_DIR_M3 # verifica se o usuario pressionou o 'd'
+			
+	SHOT_ESQ_M3:	
+			addi t3,t3,-5
+			addi t4,t4,6
+			sw t3,0(t0)
+			sw t4,4(t0)
+			li t1,1
+			sw t1,8(t0)
+			sw zero,12(t0)
+			sw zero,16(t0)
+			
+			ret
+	SHOT_DIR_M3:	
+			addi t3,t3,20
+			addi t4,t4,6
+			sw t3,0(t0)
+			sw t4,4(t0)
+			li t1,1
+			sw t1,8(t0)
+			sw zero,12(t0)
+			sw t1,16(t0)
+			
+			ret
+### UNIVERSAL
+START_ICE_SHOT_M3: # inicia um tiro
+		la a0,ITENS
+		lh a0,0(a0)
+		bnez a0,ICE_BEAM_PICKED_M3
+		
+		ret # se o tiro de gelo ainda não foi pego, não faz nada e retorna
+		
+	ICE_BEAM_PICKED_M3:
+		la a0,FRAME_SAMUS # se a Samus estiver no chão coloca os frames de animação
+		sh zero,0(a0)
+		
+		la t0,SHOT_BEAMS
+		lw t1,8(t0)
+		la t2,CHAR_POS
+		lw t3,0(t2)
+		lw t4,4(t2)
+		bnez t1,ICE_SHOT_2_M3 # quando o primeiro tiro já estiver ativo, pula para outro.
+		
+		j ICE_SHOT_LADO_M3
+		
+	ICE_SHOT_2_M3:	addi t0,t0,20
+			lw t1,8(t0)
+			bnez t1,ICE_SHOT_3_M3
+			
+			j ICE_SHOT_LADO_M3
+			
+	ICE_SHOT_3_M3:	addi t0,t0,20
+			lw t1,8(t0)
+			beqz t1,ICE_SHOT_LADO_M3
+			
+			ret
+	ICE_SHOT_LADO_M3:	
+			la t5,LAST_DIREC
+			lw t5,0(t5)
+			li t1,'a' # coloca o valor da tecla
+			beq t5,t1,ICE_SHOT_ESQ_M3 # verifica se a ultima tecla pressionada pelo usuario é 'a'
+			
+			li t1,'d' # coloca o valor da tecla
+			beq t5,t1,ICE_SHOT_DIR_M3 # verifica se o usuario pressionou o 'd'
+			
+	ICE_SHOT_ESQ_M3:	
+			addi t3,t3,-5
+			addi t4,t4,6
+			sw t3,0(t0)
+			sw t4,4(t0)
+			li t1,1
+			sw t1,8(t0)
+			sw t1,12(t0)
+			sw zero,16(t0)
+			
+			ret
+	ICE_SHOT_DIR_M3:	
+			addi t3,t3,20
+			addi t4,t4,6
+			sw t3,0(t0)
+			sw t4,4(t0)
+			li t1,1
+			sw t1,8(t0)
+			sw t1,12(t0)
+			sw t1,16(t0)
+			
+			ret
+
+START_JUMP_RIDLEY: # iniciar o pulo ridley
+		la a0,RIDLEY_POS
+		sw zero,20(a0) # colocar o frame de pulo dele
+		
+		lw a1,12(a0)
+		addi a1,a1,1 # colocar o intervalo que ele está pulando, depois de 200 (201)
+		sw a1,12(a0)
+		
+		lw a1,4(a0)
+		addi a1,a1,2
+		sw a1,4(a0)
+		
+		ret
+	
+START_SHOT_RIDLEY:
+		la a0,RIDLEY_POS
+		lw a1,16(a0)
+		addi a1,a1,1 # colocar o intervalo que ele está atirando, depois de 300 (301)
+		sw a1,16(a0)
+		
+		### setar posiçao primeiro tiro
+		lw a1,0(a0)
+		lw a2,4(a0)
+		addi a1,a1,-5
+		addi a2,a2,20
+		
+		la t0,RIDLEY_HIT
+		sw a1,0(t0)
+		sw a2,4(t0)
+		
+		### setar posiçao segundo tiro
+		addi a2,a2,-6
+		
+		sw a1,8(t0)
+		sw a2,12(t0)
+		
+		### setar posiçao terceiro tiro
+		addi a2,a2,-7
+		
+		sw a1,16(t0)
+		sw a2,20(t0)
+		
+		ret
+		
+MOVE_RIDLEY: # FUNÇÃO PARA O RIDLEY PULAR
+		la a0,RIDLEY_POS
+		lw a1,12(a0)
+		li a2,200
+		blt a1,a2,MOVE_RIDLEY_RET
+		
+		addi a1,a1,1
+		sw a1,12(a0)
+		
+		li a2,230
+		ble a1,a2,MOVE_RIDLEY_BAIXO
+		# MOVE O RIDLEY PARA CIMA
+		lw t1,4(a0)
+		addi t1,t1,2
+		sw t1,4(a0)
+		
+		j MOVE_RIDLEY_END
+		
+	MOVE_RIDLEY_BAIXO:# MOVE O RIDLEY PARA BAIXO
+		lw t1,4(a0)
+		addi t1,t1,-2
+		sw t1,4(a0)
+		
+	MOVE_RIDLEY_END:
+		li a2,258
+		bne a1,a2,MOVE_RIDLEY_RET
+		
+		# zera a animação de pulo
+		li a1,1
+		sw a1,20(a0) #coloca o frame no chao
+		sw zero,12(a0)
+	MOVE_RIDLEY_RET:
+		ret	
+		
+		
+SHOT_RIDLEY_ANIMA: # faz os tiros andarem até uma certa distancia e depois sumirem
+		la a0,RIDLEY_POS
+		lw a2,16(a0)
+		li a1,150
+		blt a2,a1,SHOT_RIDLEY_RET
+		
+		addi a2,a2,1
+		sw a2,16(a0)
+		
+		### anda na horizontal todos os tiros
+		la t0,RIDLEY_HIT
+		lw t1,0(t0)
+		addi t1,t1,-3
+		sw t1,0(t0)
+		
+		lw t1,8(t0)
+		addi t1,t1,-3
+		sw t1,8(t0)
+		
+		lw t1,16(t0)
+		addi t1,t1,-3
+		sw t1,16(t0)
+		
+		li a1,165
+		bgt a2,a1,SHOT_RIDLEY_BAIXO
+		### tiros subindo
+		lw t1,4(t0)
+		addi t1,t1,-2
+		sw t1,4(t0)
+		
+		lw t1,12(t0)
+		addi t1,t1,-3
+		sw t1,12(t0)
+		
+		lw t1,20(t0)
+		addi t1,t1,-4
+		sw t1,20(t0)
+		
+		j SHOT_RIDLEY_END
+		
+	SHOT_RIDLEY_BAIXO: ### tiros descendo
+		lw t1,4(t0)
+		addi t1,t1,2
+		sw t1,4(t0)
+		
+		lw t1,12(t0)
+		addi t1,t1,3
+		sw t1,12(t0)
+		
+		lw t1,20(t0)
+		addi t1,t1,4
+		sw t1,20(t0)
+		
+	SHOT_RIDLEY_END:
+		li a1,180
+		bne a2,a1,SHOT_RIDLEY_RET
+		
+		# zera a animação de tiro
+		la a0,RIDLEY_POS
+		lw a2,16(a0)
+		sw zero,16(a0)
+		
+	SHOT_RIDLEY_RET:
+		ret		
+		
 			
 			
 			
