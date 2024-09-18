@@ -80,10 +80,13 @@ RIDLEY_HIT: .word 0,0,0,0,0,0,0 # posição x, y, O ULTIMO É APENAS PARA MOSTRA
 LIFE_RIDLEY: .word 30
 
 # Numero de Notas a tocar
-NUM: .word 73
+NUM1: .word 73
 # lista de nota,duração,nota,duração,nota,duração,...
-NOTAS: 60,2370,64,1777,62,148,64,148,62,148,59,148,60,2370,64,1777,62,148,64,148,62,148,59,148,60,2370,64,1777,62,148,64,148,62,148,59,148,60,4740,62,1786,62,198,60,198,62,198,64,1191,59,595,53,198,59,198,60,198,62,1786,62,198,60,198,62,198,64,1191,59,595,59,198,64,198,65,198,67,2382,65,1191,64,1191,65,1786,69,198,67,198,65,198,67,1191,64,595,64,198,67,198,71,198,73,4764,65,1777,60,592,64,1777,62,148,64,148,62,148,59,148,65,1777,60,592,64,1777,62,148,64,148,62,148,59,148,65,1777,60,592,64,1777,62,148,64,148,62,148,59,148,60,2370,57,2370
+NOTAS1: 60,2370,64,1777,62,148,64,148,62,148,59,148,60,2370,64,1777,62,148,64,148,62,148,59,148,60,2370,64,1777,62,148,64,148,62,148,59,148,60,4740,62,1786,62,198,60,198,62,198,64,1191,59,595,53,198,59,198,60,198,62,1786,62,198,60,198,62,198,64,1191,59,595,59,198,64,198,65,198,67,2382,65,1191,64,1191,65,1786,69,198,67,198,65,198,67,1191,64,595,64,198,67,198,71,198,73,4764,65,1777,60,592,64,1777,62,148,64,148,62,148,59,148,65,1777,60,592,64,1777,62,148,64,148,62,148,59,148,65,1777,60,592,64,1777,62,148,64,148,62,148,59,148,60,2370,57,2370
 
+NUM2: .word 76
+
+NOTAS2: 64,116,67,116,72,116,76,116,79,465,77,465,76,465,72,1860,62,116,64,116,65,116,67,116,72,465,67,465,77,116,76,116,72,116,67,116,65,930,72,930,64,116,67,116,72,116,76,116,79,465,77,465,76,465,72,1860,62,116,64,116,65,116,67,116,72,465,67,465,77,116,76,116,72,116,67,116,65,930,72,930,71,930,72,465,67,465,76,465,74,465,77,465,76,465,74,232,72,232,68,232,65,232,64,465,72,465,66,232,69,232,74,465,72,465,74,465,71,930,72,465,67,465,76,465,74,465,77,465,76,465,74,232,72,232,68,232,65,232,64,465,72,465,66,232,69,232,74,465,72,465,74,465
 
 .text
 SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -111,8 +114,9 @@ SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
 	#
 	#	FRAME 0 = 0xFF00 0000
 	#	FRAME 1 = 0xFF10 0000
-	
-LOOP_MENU:	
+		
+LOOP_MENU:
+		
 		li t1,0xFF200000	# carrega o endereço de controle do KDMMIO
 		lw t0,0(t1)		# Le bit de Controle Teclado
 		andi t0,t0,0x0001	# mascara o bit menos significativo
@@ -4354,8 +4358,7 @@ END_SCREEN:
 		# IMPRIMIR NO FRAME 1 TAMBÉM
 		li a3,1
 		call PRINT
-
-END_SCREEN1:
+		
 		la a0,endscreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
 		li a1,32 # LARGURA DA IMAGEM
 		li a2,0 # ALTURA DA IMAGEM
@@ -4366,13 +4369,27 @@ END_SCREEN1:
 		# IMPRIMIR NO FRAME 1 TAMBÉM
 		li a3,1
 		call PRINT
+		
+		la s0,NUM2		# define o endere�o do n�mero de notas
+		lw s1,0(s0)		# le o numero de notas
+		la s0,NOTAS2		# define o endere�o das notas
+		li t0,0			# zera o contador de notas
+		li a2,5			# define o instrumento
+		li a3,80		# define o volume
+END_SCREEN1:
+		
+		beq t0,s1, END_SCREEN	# contador chegou no final? ent�o  v� para FIM
+		lw a0,0(s0)		# le o valor da nota
+		lw a1,4(s0)		# le a duracao da nota
+		li a7,31		# define a chamada de syscall
+		ecall			# toca a nota
+		mv a0,a1		# passa a dura��o da nota para a pausa
+		li a7,32		# define a chamada de syscal
+		ecall			# realiza uma pausa de a0 ms
+		addi s0,s0,8		# incrementa para o endere�o da pr�xima nota
+		addi t0,t0,1		# incrementa o contador de notas
+		
 		j END_SCREEN1
-	
-			
-			
-			
-			
-			
 			
 			
 			
