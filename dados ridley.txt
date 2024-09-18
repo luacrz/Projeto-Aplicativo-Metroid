@@ -1,8 +1,12 @@
-RIDLEY_POS: .word 538,168,30,0,0,0 # x,y, vida, delay pulo, delay tiro, frame atual (0 ou 1)
-RIDLEY_HIT: .word 0,0,0,0,0,0,0,0,0,0 # posição x,y,ativo (1 até 30) ou não(0), O ULTIMO É APENAS PARA MOSTRAR O FRAME DE CADA TIRO. Isso para cada um dos 3 tiros
+RIDLEY_POS: .word 538,168,30,0,0,1 # x, y, vida, delay pulo, delay tiro, frame atual (0, 1 ou 2)
+RIDLEY_HIT: .word 0,0,0,0,0,0,0 # posição x, y, O ULTIMO É APENAS PARA MOSTRAR O FRAME DE CADA TIRO. Isso para cada um dos 3 tiros
 
 ridley1
 ridley2
 ridleyhit1
 ridleyhit2
 ridleyjump
+
+SHOT_RIDLEY_ANIMA
+
+MOVE_RIDLEY

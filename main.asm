@@ -1,4 +1,5 @@
 .data
+
 .include "mapsitens/TitleScreen.s" # Inclui os dados da sprite
 .include "mapsitens/cenario1.s"
 .include "mapsitens/cenario2.s"
@@ -77,6 +78,12 @@ SHOT_ROCKETS: .word 0,0,0,0,0,0,0,0,0,0,0,0 # posição x,y,ativo (1 até 10) ou
 RIDLEY_POS: .word 538,168,30,0,0,1 # x, y, vida, delay pulo, delay tiro, frame atual (0, 1 ou 2)
 RIDLEY_HIT: .word 0,0,0,0,0,0,0 # posição x, y, O ULTIMO É APENAS PARA MOSTRAR O FRAME DE CADA TIRO. Isso para cada um dos 3 tiros
 LIFE_RIDLEY: .word 30
+
+# Numero de Notas a tocar
+NUM: .word 73
+# lista de nota,duração,nota,duração,nota,duração,...
+NOTAS: 60,2370,64,1777,62,148,64,148,62,148,59,148,60,2370,64,1777,62,148,64,148,62,148,59,148,60,2370,64,1777,62,148,64,148,62,148,59,148,60,4740,62,1786,62,198,60,198,62,198,64,1191,59,595,53,198,59,198,60,198,62,1786,62,198,60,198,62,198,64,1191,59,595,59,198,64,198,65,198,67,2382,65,1191,64,1191,65,1786,69,198,67,198,65,198,67,1191,64,595,64,198,67,198,71,198,73,4764,65,1777,60,592,64,1777,62,148,64,148,62,148,59,148,65,1777,60,592,64,1777,62,148,64,148,62,148,59,148,65,1777,60,592,64,1777,62,148,64,148,62,148,59,148,60,2370,57,2370
+
 
 .text
 SETUP: 		la a0,TitleScreen #INICIA O REGISTRADOR COM A IMAGEM DO MENU
@@ -625,6 +632,13 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 			addi t0,t0,-1
 			sw t0,16(t1)
 			
+			li a0,100		# define a nota
+			li a1,100		# define a dura��o da nota em ms
+			li a2,127		# define o instrumento
+			li a3,127		# define o volume
+			li a7,33		# define o syscall
+			ecall
+			
 			j HIT_DOOR
 			
 	HIT_ICE_BEAM:
@@ -635,6 +649,13 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 			sw t0,16(t1)
 			li t0,1 # deixa congelado
 			sw t0,20(t1)
+			
+			li a0,200		# define a nota
+			li a1,100		# define a dura��o da nota em ms
+			li a2,127		# define o instrumento
+			li a3,127		# define o volume
+			li a7,33		# define o syscall
+			ecall
 			
 	HIT_DOOR:	
 			la t0,DOORS
@@ -661,6 +682,13 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 			lh t1,0(t0)
 			addi t1,t1,-1
 			sh t1,0(t0)
+			
+			li a0,100		# define a nota
+			li a1,100		# define a dura��o da nota em ms
+			li a2,127		# define o instrumento
+			li a3,127		# define o volume
+			li a7,33		# define o syscall
+			ecall
 			
 	FIM_HIT_SHOTS:	addi t5,t5,20
 			addi t4,t4,-1
@@ -726,6 +754,13 @@ LOOP_JOGO:#### RENDERIZAÇÃO PERSONAGEM
 			lw a1,0(a0)
 			addi a1,a1,-5
 			sw a1,0(a0)
+			
+			li a0,50		# define a nota
+			li a1,100		# define a dura��o da nota em ms
+			li a2,127		# define o instrumento
+			li a3,127		# define o volume
+			li a7,33		# define o syscall
+			ecall	
 			
 	SAIDA_1:	
 			la t0,DOORS
@@ -2056,6 +2091,13 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 				addi t0,t0,-1
 				sw t0,12(t1)
 				
+				li a0,100		# define a nota
+				li a1,100		# define a dura��o da nota em ms
+				li a2,127		# define o instrumento
+				li a3,127		# define o volume
+				li a7,33		# define o syscall
+				ecall
+				
 				j HIT_DOOR_M2
 				
 		HIT_ICE_BEAM_M2:
@@ -2066,6 +2108,13 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 				sw t0,12(t1)
 				li t0,1 # deixa congelado
 				sw t0,16(t1)
+				
+				li a0,200		# define a nota
+				li a1,100		# define a dura��o da nota em ms
+				li a2,127		# define o instrumento
+				li a3,127		# define o volume
+				li a7,33		# define o syscall
+				ecall
 				
 		HIT_DOOR_M2:	
 				la t0,DOORS
@@ -2085,6 +2134,13 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 				call VERIFICA_HIT_BOX
 				
 				beqz a6,FIM_HIT_SHOTS_M2
+				
+				li a0,100		# define a nota
+				li a1,100		# define a dura��o da nota em ms
+				li a2,127		# define o instrumento
+				li a3,127		# define o volume
+				li a7,33		# define o syscall
+				ecall
 				
 				sw zero,8(t5) # desativa tiro
 				
@@ -2126,6 +2182,13 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 				addi t0,t0,-4
 				sw t0,12(t1)
 				
+				li a0,10		# define a nota
+				li a1,100		# define a dura��o da nota em ms
+				li a2,127		# define o instrumento
+				li a3,127		# define o volume
+				li a7,33		# define o syscall
+				ecall
+				
 		HIT_DOOR_ROCKET_M2:	
 				la t0,DOORS
 				lh t0,4(t0) # VERIFICAR SE AINDA TEM PORTA
@@ -2151,6 +2214,13 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 				lh t1,4(t0)
 				addi t1,t1,-1
 				sh t1,4(t0)
+				
+				li a0,10		# define a nota
+				li a1,100		# define a dura��o da nota em ms
+				li a2,127		# define o instrumento
+				li a3,127		# define o volume
+				li a7,33		# define o syscall
+				ecall
 				
 		FIM_HIT_SHOTS_ROCKET_M2:	
 				addi t5,t5,16
@@ -2217,6 +2287,13 @@ LOOP_JOGO_M2:#### RENDERIZAÇÃO PERSONAGEM
 			lw a1,0(a0)
 			addi a1,a1,-5
 			sw a1,0(a0)
+			
+			li a0,40		# define a nota
+			li a1,100		# define a dura��o da nota em ms
+			li a2,127		# define o instrumento
+			li a3,127		# define o volume
+			li a7,33		# define o syscall
+			ecall	
 			
 	SAIDA_3:	
 			la t0,DOORS
@@ -2941,12 +3018,26 @@ LOOP_JOGO_M3:#### RENDERIZAÇÃO PERSONAGEM
 			li t0,200
 			bne a1,t0,ACTIONS_RIDLEY_SHOT
 			
+			li a0,50		# define a nota
+			li a1,100		# define a dura��o da nota em ms
+			li a2,7			# define o instrumento
+			li a3,127		# define o volume
+			li a7,33		# define o syscall
+			ecall	
+			
 			call START_JUMP_RIDLEY
 
 		ACTIONS_RIDLEY_SHOT:
 				lw a1,16(a0)
 				li t0,150
 				bne a1,t0,INIT_PRINT_RIDLEY
+				
+				li a0,40		# define a nota
+				li a1,100		# define a dura��o da nota em ms
+				li a2,35		# define o instrumento
+				li a3,127		# define o volume
+				li a7,33		# define o syscall
+				ecall
 				
 				call START_SHOT_RIDLEY
 
@@ -3378,6 +3469,13 @@ LOOP_JOGO_M3:#### RENDERIZAÇÃO PERSONAGEM
 			lw a1,0(a0)
 			addi a1,a1,-5
 			sw a1,0(a0)
+			
+			li a0,40		# define a nota
+			li a1,100		# define a dura��o da nota em ms
+			li a2,127		# define o instrumento
+			li a3,127		# define o volume
+			li a7,33		# define o syscall
+			ecall
 	
 	DANO_SHOTS_M3:
 			li t4,3
@@ -3417,6 +3515,13 @@ LOOP_JOGO_M3:#### RENDERIZAÇÃO PERSONAGEM
 				addi t0,t0,-1 # da o dano
 				sw t0,0(t1)
 				
+				li a0,100		# define a nota
+				li a1,100		# define a dura��o da nota em ms
+				li a2,127		# define o instrumento
+				li a3,127		# define o volume
+				li a7,33		# define o syscall
+				ecall	
+				
 				j FIM_HIT_SHOTS_M3
 				
 		HIT_ICE_BEAM_M3:
@@ -3425,6 +3530,14 @@ LOOP_JOGO_M3:#### RENDERIZAÇÃO PERSONAGEM
 				lw t0,0(t1)
 				addi t0,t0,-2 # da o dano
 				sw t0,0(t1)
+				
+				li a0,200		# define a nota
+				li a1,100		# define a dura��o da nota em ms
+				li a2,127		# define o instrumento
+				li a3,127		# define o volume
+				li a7,33		# define o syscall
+				ecall	
+				
 				
 		FIM_HIT_SHOTS_M3:	
 				addi t5,t5,20
@@ -3460,6 +3573,13 @@ LOOP_JOGO_M3:#### RENDERIZAÇÃO PERSONAGEM
 				lw t0,0(t1)
 				addi t0,t0,-4
 				sw t0,0(t1)
+				
+				li a0,10		# define a nota
+				li a1,100		# define a dura��o da nota em ms
+				li a2,127		# define o instrumento
+				li a3,127		# define o volume
+				li a7,33		# define o syscall
+				ecall
 				
 		FIM_HIT_SHOTS_ROCKET_M3:	
 				addi t5,t5,16
@@ -3503,6 +3623,13 @@ LOOP_JOGO_M3:#### RENDERIZAÇÃO PERSONAGEM
 				lw a1,0(a0)
 				addi a1,a1,-5
 				sw a1,0(a0)
+				
+				li a0,40		# define a nota
+				li a1,100		# define a dura��o da nota em ms
+				li a2,127		# define o instrumento
+				li a3,127		# define o volume
+				li a7,33		# define o syscall
+				ecall
 				
 		FIM_HIT_SHOTS_RIDLEY_M3:	
 				addi t5,t5,8
